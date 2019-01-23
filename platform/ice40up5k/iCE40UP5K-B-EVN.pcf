@@ -1,0 +1,8 @@
+set_io rgb0 39
+set_io rgb1 40
+set_io rgb2 41
+set_io clk 35
+set_io spi_ss 4 #8A
+set_io spi_sclk 45 #5B
+set_io spi_mosi 48 #4A
+set_io spi_miso 3 #9B
