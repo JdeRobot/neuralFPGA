@@ -1,0 +1,3 @@
+[submodule "src/main/resources/rtl/Booth_Multipliers"]
+	path = src/main/resources/rtl/Booth_Multipliers
+	url = https://github.com/dlobato/Booth_Multipliers

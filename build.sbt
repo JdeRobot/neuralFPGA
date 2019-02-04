@@ -1,4 +1,4 @@
-name := "SpinalTemplateSbt"
+name := "neuralFPGA"
 
 version := "1.0"
 
