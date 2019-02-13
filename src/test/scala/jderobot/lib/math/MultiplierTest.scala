@@ -1,15 +1,15 @@
-package jderobot.lib.multiplier32bit
+package jderobot.lib.math
 
-import spinal.core._
+import org.scalatest.FunSuite
 import spinal.core.sim._
 
 import scala.util.Random
 
-object Multiplier32bitSim {
-  def main(args: Array[String]) {
-    val simConfig = SimConfig.withWave
+class MultiplierTest extends FunSuite {
+  val simConfig = SimConfig.withWave
 
-    simConfig.doSim(Multiplier32bit(Multiplier32bitImpl().oneCycleMultiplier)) { dut =>
+  test("oneCycleMultiplier") {
+    simConfig.doSim(Multiplier(32, MultiplierImpl().oneCycleMultiplier)) { dut =>
 
       dut.clockDomain.forkStimulus(period = 10)
 
@@ -68,8 +68,10 @@ object Multiplier32bitSim {
         idx += 1
       }
     }
+  }
 
-    simConfig.doSim(Multiplier32bit(Multiplier32bitImpl().boothMultiplier)) { dut =>
+  test("boothMultiplier") {
+    simConfig.doSim(Multiplier(32, MultiplierImpl().boothMultiplier)) { dut =>
 
       dut.clockDomain.forkStimulus(period = 10)
 
