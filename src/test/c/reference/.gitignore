@@ -1,1 +1,2 @@
-rounding_divide_by_pot_32bit_reference
+rounding_divide_by_pot_*bit_reference
+saturating_rounding_doubling_high_mul_*bit_reference

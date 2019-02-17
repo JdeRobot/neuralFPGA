@@ -6,14 +6,27 @@ import spinal.core._
   * Correctly-rounded-to-nearest division by a power-of-two.
   */
 object RoundingDivideByPOT {
-  def apply(operand: SInt, x: UInt): SInt = {
-    val signbit = U(operand.msb)
-    val adjust = ((signbit << x) - signbit).resize(operand.getWidth).asSInt
-    (operand + adjust) >> x
+  def apply(x: SInt, exp: UInt): SInt = {
+    assert(exp.maxValue < x.getWidth, "exp max value can't be bigger than x width")
+    val mask = ((U"1" << exp) -1).asBits
+    val remainder = (x.asBits & mask.resized).asUInt
+    val threshold = (mask >> 1).asUInt + x.msb.asUInt
+
+    (x |>> exp) + ((remainder > threshold) ? S(1) | S(0)).resized
+  }
+
+  def apply(x: SInt, exp: Int): SInt = {
+    assert(exp < x.getWidth, "exp can't be bigger than x width")
+    val mask = ((U"1" << exp) -1).asBits
+    val remainder = (x.asBits & mask.resized).asUInt
+    val threshold = (mask >> 1).asUInt + x.msb.asUInt
+
+    (x |>> exp) + ((remainder > threshold) ? S(1) | S(0)).resized
   }
 }
 
 /**
+  * FIXME: use Multiplier and solve in stages
   * From gemmlowp fixedpoint.h
   *
   * Returns the integer that represents the product of two fixed-point
@@ -28,20 +41,11 @@ object SaturatingRoundingDoublingHighMul {
     assert(isPow2(a.getWidth), "Operands width must be a power of 2")
     val ab = a * b
 
-    willOverflow(a, b) ? S(a.maxValue) | getX2High(round(ab))
+    willOverflow(a, b) ? S(a.maxValue) | RoundingDivideByPOT(ab, (ab.getWidth/2) - 1).subdivideIn(2 slices)(0)
   }
 
   def willOverflow(a: SInt, b: SInt) : Bool = {
     (a === b) & (a === S(a.minValue))
-  }
-
-  def round(ab: SInt) : SInt = {
-    val nudge = (ab >= 0) ? S(1 << ((ab.getWidth/2) - 2)) | S(1 - (1 << ((ab.getWidth/2) - 2)))
-    ab + nudge
-  }
-
-  def getX2High(ab: SInt) : SInt = {
-    ab(ab.high - 1 downto (ab.getWidth/2 - 1))
   }
 }
 
