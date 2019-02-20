@@ -1,4 +1,4 @@
-package spinal.lib.blackbox.lattice.ice40
+package jderobot.lib.blackbox.lattice.ice40
 
 import spinal.core._
 

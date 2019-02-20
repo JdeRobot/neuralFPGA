@@ -1,9 +1,9 @@
-package spinal.lib.blackbox.lattice.ice40
+package jderobot.lib.blackbox.lattice.ice40
 
 import spinal.core._
 
 case class SB_SPRAM256KA() extends BlackBox {
-  val ADDRESS = in Bits(14 bits)
+  val ADDRESS = in UInt(14 bits)
   val DATAIN = in Bits(16 bits)
   val MASKWREN = in Bits(4 bits)
   val WREN = in Bool()
@@ -16,7 +16,5 @@ case class SB_SPRAM256KA() extends BlackBox {
 
   mapCurrentClockDomain(CLOCK)
 
-  addRTLPath("src/main/resources/rtl/lattice/ice40/SB_SPRAM256KA.v") //verilator mockup
-  addRTLPath("src/main/resources/rtl/lattice/ice40/SPRAM256KA.v") //from radiant cae library. I can't distribute this file.
+  addRTLPath("src/main/resources/rtl/lattice/ice40/SB_SPRAM256KA.v")
 }
-

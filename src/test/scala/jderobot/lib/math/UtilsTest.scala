@@ -5,8 +5,6 @@ import spinal.core._
 import spinal.core.sim._
 import sys.process._
 
-import scala.util.Random
-
 class UtilsTest extends FunSuite {
   class RoundingDivideByPOTDut extends Component {
     val io = new Bundle {
