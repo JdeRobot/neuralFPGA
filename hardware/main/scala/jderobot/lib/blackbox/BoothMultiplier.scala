@@ -16,7 +16,7 @@ case class Booth_Multiplier(operandsWidth: Int = 8) extends BlackBox {
 
 
   mapCurrentClockDomain(Clk)
-  addRTLPath("src/main/resources/rtl/Booth_Multipliers/Src/Booth_Multiplier.v")
+  addRTLPath("hardware/main/resources/rtl/Booth_Multipliers/Src/Booth_Multiplier.v")
 }
 
 case class Booth_Multiplier_4xA(operandsWidth: Int = 8) extends BlackBox {
@@ -32,5 +32,5 @@ case class Booth_Multiplier_4xA(operandsWidth: Int = 8) extends BlackBox {
 
 
   mapCurrentClockDomain(Clk)
-  addRTLPath("src/main/resources/rtl/Booth_Multipliers/Src/Booth_Multiplier_4xA.v")
+  addRTLPath("hardware/main/resources/rtl/Booth_Multipliers/Src/Booth_Multiplier_4xA.v")
 }

@@ -104,6 +104,6 @@ case class SB_MAC16(config: SB_MAC16_Config) extends BlackBox {
 
   mapCurrentClockDomain(CLK, null, CE)
 
-  addRTLPath("src/main/resources/rtl/lattice/ice40/SB_MAC16.v") //verilator mockup
-  addRTLPath("src/main/resources/rtl/lattice/ice40/MAC16_SIM.v") //from radiant cae library. I can't distribute this file.
+  addRTLPath("hardware/main/resources/rtl/lattice/ice40/SB_MAC16.v") //verilator mockup
+  addRTLPath("hardware/main/resources/rtl/lattice/ice40/MAC16_SIM.v") //from radiant cae library. I can't distribute this file.
 }

@@ -42,5 +42,5 @@ case class SB_RGBA_DRV(config: SB_RGBA_DRV_Config) extends BlackBox {
   val RGB1 = out Bool
   val RGB2 = out Bool
 
-  addRTLPath("src/main/resources/rtl/lattice/ice40/SB_RGBA_DRV.v") //verilator mockup
+  addRTLPath("hardware/main/resources/rtl/lattice/ice40/SB_RGBA_DRV.v") //verilator mockup
 }

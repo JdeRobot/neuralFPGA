@@ -14,7 +14,7 @@ ICEPROG_ARGS ?=
 
 all: $(TOPLEVEL).bin
 
-%.v: ${PROJ_TOP_DIR}/src/main/scala/neuralfpga/umlp/UMlpUp5k.scala
+%.v: ${PROJ_TOP_DIR}/hardware/main/scala/neuralfpga/umlp/UMlpUp5k.scala
 	cd ${PROJ_TOP_DIR} && sbt "runMain neuralfpga.umlp.${TOPLEVEL} ${ROOT_DIR}"
 
 %.blif: %.v

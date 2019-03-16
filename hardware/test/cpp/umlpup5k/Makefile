@@ -10,7 +10,7 @@ TRACE ?= no
 DEBUG ?= no
 
 CFLAGS ?= -I../../common -std=c++11
-VERILATOR_ARGS ?= --gdbbt -Wno-UNOPTFLAT -Wno-WIDTH --x-assign unique -I${PROJ_TOP_DIR}/src/main/resources/rtl/lattice/ice40
+VERILATOR_ARGS ?= --gdbbt -Wno-UNOPTFLAT -Wno-WIDTH --x-assign unique -I${PROJ_TOP_DIR}/hardware/main/resources/rtl/lattice/ice40
 
 ifeq (${TRACE},yes)
 	VERILATOR_ARGS += --trace
@@ -23,7 +23,7 @@ else
 	CFLAGS += -O3
 endif
 
-%.v: ${PROJ_TOP_DIR}/src/main/scala/neuralfpga/umlp/${TOPLEVEL}.scala
+%.v: ${PROJ_TOP_DIR}/hardware/main/scala/neuralfpga/umlp/${TOPLEVEL}.scala
 	cd ${PROJ_TOP_DIR} && sbt "runMain neuralfpga.umlp.${TOPLEVEL} ${ROOT_DIR}"
 
 run: ./obj_dir/V${TOPLEVEL}

@@ -16,5 +16,5 @@ case class SB_SPRAM256KA() extends BlackBox {
 
   mapCurrentClockDomain(CLOCK)
 
-  addRTLPath("src/main/resources/rtl/lattice/ice40/SB_SPRAM256KA.v")
+  addRTLPath("hardware/main/resources/rtl/lattice/ice40/SB_SPRAM256KA.v")
 }
