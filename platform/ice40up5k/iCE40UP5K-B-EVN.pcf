@@ -1,8 +1,16 @@
-set_io rgb0 39
-set_io rgb1 40
-set_io rgb2 41
-set_io clk 35
-set_io spi_ss 4 #8A
-set_io spi_sclk 45 #5B
-set_io spi_mosi 48 #4A
-set_io spi_miso 3 #9B
+# 12 MHz clock
+set_io io_clk  35
+
+# RS232
+set_io io_serialTx  6
+
+# RGB LED Driver
+set_io io_leds_b  39
+set_io io_leds_g  40
+set_io io_leds_r  41
+
+# SPI Flash
+set_io io_flashSpi_ss    16
+set_io io_flashSpi_sclk  15
+set_io io_flashSpi_mosi  14
+set_io io_flashSpi_miso  17

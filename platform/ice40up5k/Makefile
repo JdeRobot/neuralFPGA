@@ -1,10 +1,9 @@
-TOP ?= not_defined_top
+TOPLEVEL ?= not_defined_top
 PIN_DEF = iCE40UP5K-B-EVN.pcf
 DEVICE = up5k
 
 ROOT_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 PROJ_TOP_DIR = $(ROOT_DIR)/../..
-TOP_LOWER_CASE := $(shell echo $(TOP) | tr '[:upper:]' '[:lower:]')
 
 ARACHNE = arachne-pnr 
 ARACHNE_ARGS = 
@@ -13,13 +12,13 @@ ICETIME = icetime
 ICEPROG = iceprog
 ICEPROG_ARGS ?=
 
-all: $(TOP).bin
+all: $(TOPLEVEL).bin
 
-%.v: $(PROJ_TOP_DIR)/src/main/scala/neuralfpga/$(TOP_LOWER_CASE)/$(TOP).scala
-	cd $(PROJ_TOP_DIR) && sbt "runMain neuralfpga.$(TOP_LOWER_CASE).$(TOP) $(ROOT_DIR)"
+%.v: ${PROJ_TOP_DIR}/src/main/scala/neuralfpga/umlp/UMlpUp5k.scala
+	cd ${PROJ_TOP_DIR} && sbt "runMain neuralfpga.umlp.${TOPLEVEL} ${ROOT_DIR}"
 
 %.blif: %.v
-	yosys -p 'synth_ice40 -top $(TOP) -blif $@' $<
+	yosys -p 'synth_ice40 -top $(TOPLEVEL) -blif $@' $<
 
 %.asc: $(PIN_DEF) %.blif
 	$(ARACHNE) $(ARACHNE_ARGS) -d $(subst up,,$(subst hx,,$(subst lp,,$(DEVICE)))) -o $@ -p $^
@@ -30,9 +29,9 @@ all: $(TOP).bin
 %.rpt: %.asc
 	$(ICETIME) -d $(DEVICE) -mtr $@ $<
 
-time: $(TOP).rpt
+time: $(TOPLEVEL).rpt
 
-prog: $(TOP).bin
+prog: $(TOPLEVEL).bin
 	$(ICEPROG) $(ICEPROG_ARGS) -S $<
 
 clean:

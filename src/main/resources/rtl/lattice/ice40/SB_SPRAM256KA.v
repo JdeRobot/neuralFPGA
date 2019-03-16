@@ -1,5 +1,3 @@
-`timescale 1ps / 1ps
-
 module SB_SPRAM256KA (
     input [13:0] ADDRESS,
     input [15:0] DATAIN,

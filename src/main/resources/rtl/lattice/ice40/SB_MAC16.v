@@ -1,7 +1,4 @@
-`timescale 1ps / 1ps
-
-//mockup for simulation
-//blackbox from yosys techlibs/ice40/cells_sim.v
+(* blackbox *)
 module SB_MAC16 (
         input CLK,
         input CE,
@@ -52,6 +49,7 @@ parameter MODE_8x8 = 1'b0;
 parameter A_SIGNED = 1'b0;
 parameter B_SIGNED = 1'b0;
 
+    // from lattice radiant simulation lib, not included
     MAC16_SIM #(
         .NEG_TRIGGER(NEG_TRIGGER),
         .C_REG(C_REG),

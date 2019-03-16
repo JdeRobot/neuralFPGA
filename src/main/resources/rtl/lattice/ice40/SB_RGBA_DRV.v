@@ -1,5 +1,4 @@
-//mockup for simulation
-//blackbox from yosys techlibs/ice40/cells_sim.v
+(* blackbox *)
 module SB_RGBA_DRV(
         input CURREN,
         input RGBLEDEN,
