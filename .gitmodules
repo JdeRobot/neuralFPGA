@@ -2,5 +2,5 @@
 	path = src/main/resources/rtl/Booth_Multipliers
 	url = https://github.com/dlobato/Booth_Multipliers
 [submodule "src/test/c/libs/gemmlowp"]
-	path = src/test/c/libs/gemmlowp
+	path = libs/gemmlowp
 	url = https://github.com/google/gemmlowp.git
