@@ -1,7 +1,8 @@
 CXX ?= clang++
 PKG_CONFIG ?= pkg-config
+PROJ_ROOT = ../../../..
 
-GEMMLOWP_PATH ?= ../libs/gemmlowp
+GEMMLOWP_PATH ?= $(PROJ_ROOT)/libs/gemmlowp
 
 CXXFLAGS ?= -g --std=c++11 -I $(GEMMLOWP_PATH)/public $(shell $(PKG_CONFIG) --cflags jsoncpp)
 LDLIBS ?= -lpthread $(shell $(PKG_CONFIG) --libs jsoncpp)
