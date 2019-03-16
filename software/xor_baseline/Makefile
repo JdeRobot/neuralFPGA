@@ -1,4 +1,4 @@
-PROJ_NAME=blink
+PROJ_NAME=xor_baseline
 DEBUG=no
 MULDIV=no
 COMPRESSED=no

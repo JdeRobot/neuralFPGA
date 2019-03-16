@@ -32,7 +32,6 @@ bin/
 /*.vhd
 /*.v
 *.cf
-*.json
 *.vcd
 !tester/src/test/resources/*.vhd
 *.yaml
