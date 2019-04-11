@@ -6,7 +6,9 @@ ROOT_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 PROJ_TOP_DIR = $(ROOT_DIR)/../..
 
 ARACHNE = arachne-pnr 
-ARACHNE_ARGS = 
+ARACHNE_ARGS =
+NEXTPNR = nextpnr-ice40
+NEXTPNR_ARGS = --freq 12
 ICEPACK = icepack
 ICETIME = icetime
 ICEPROG = iceprog
@@ -14,14 +16,20 @@ ICEPROG_ARGS ?=
 
 all: $(TOPLEVEL).bin
 
-%.v: ${PROJ_TOP_DIR}/hardware/main/scala/neuralfpga/umlp/UMlpUp5k.scala
-	cd ${PROJ_TOP_DIR} && sbt "runMain neuralfpga.umlp.${TOPLEVEL} ${ROOT_DIR}"
+%.v:
+	cd ${PROJ_TOP_DIR} && sbt "runMain neuralfpga.core.${TOPLEVEL} ${ROOT_DIR}"
 
 %.blif: %.v
 	yosys -p 'synth_ice40 -top $(TOPLEVEL) -blif $@' $<
 
-%.asc: $(PIN_DEF) %.blif
-	$(ARACHNE) $(ARACHNE_ARGS) -d $(subst up,,$(subst hx,,$(subst lp,,$(DEVICE)))) -o $@ -p $^
+%.json: %.v
+	yosys -p 'synth_ice40 -top $(TOPLEVEL) -json $@' $<
+
+%.asc: %.json $(PIN_DEF)
+	$(NEXTPNR) $(NEXTPNR_ARGS) --$(DEVICE) --json $< --pcf $(PIN_DEF) --asc $@
+
+#%.asc: $(PIN_DEF) %.blif
+	#$(ARACHNE) $(ARACHNE_ARGS) -d $(subst up,,$(subst hx,,$(subst lp,,$(DEVICE)))) -o $@ -p $^
 
 %.bin: %.asc
 	$(ICEPACK) $< $@
@@ -35,7 +43,7 @@ prog: $(TOPLEVEL).bin
 	$(ICEPROG) $(ICEPROG_ARGS) -S $<
 
 clean:
-	rm -f *.blif *.asc *.rpt *.bin *.v
+	rm -f *.json *.blif *.asc *.rpt *.bin *.v
 
 .SECONDARY:
 .PHONY: all prog time clean

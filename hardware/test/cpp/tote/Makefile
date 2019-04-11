@@ -1,4 +1,4 @@
-TOPLEVEL = UMlpUp5k
+TOPLEVEL = Tote
 ROOT_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 PROJ_TOP_DIR = $(ROOT_DIR)/../../../..
 
@@ -23,8 +23,10 @@ else
 	CFLAGS += -O3
 endif
 
-%.v: ${PROJ_TOP_DIR}/hardware/main/scala/neuralfpga/umlp/${TOPLEVEL}.scala
-	cd ${PROJ_TOP_DIR} && sbt "runMain neuralfpga.umlp.${TOPLEVEL} ${ROOT_DIR}"
+compile: ./obj_dir/V${TOPLEVEL}
+
+%.v: ${PROJ_TOP_DIR}/hardware/main/scala/neuralfpga/core/${TOPLEVEL}.scala
+	cd ${PROJ_TOP_DIR} && sbt "runMain neuralfpga.core.${TOPLEVEL} ${ROOT_DIR}"
 
 run: ./obj_dir/V${TOPLEVEL}
 	./obj_dir/V${TOPLEVEL} ${ARGS}
@@ -35,8 +37,6 @@ run: ./obj_dir/V${TOPLEVEL}
  	
 ./obj_dir/V${TOPLEVEL}: ./obj_dir ${SRCS} ${HEADERS}
 	make  -j${THREAD_COUNT} -C obj_dir/ -f V${TOPLEVEL}.mk V${TOPLEVEL}
- 	
-compile: ./obj_dir/V${TOPLEVEL}
 
 clean:
 	rm -rf obj_dir

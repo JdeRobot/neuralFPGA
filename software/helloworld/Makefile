@@ -1,4 +1,4 @@
-PROJ_NAME := blink
+PROJ_NAME := helloworld
 DEBUG := no
 
 TARGET_DIR := $(realpath ../tote)
@@ -8,7 +8,7 @@ BUILDDIR := $(ROOTDIR)/build
 OBJDIR := $(BUILDDIR)/obj
 BINDIR := $(BUILDDIR)
 
-SRCS := $(wildcard src/*.c)
+SRCS := $(wildcard src/*.c) $(wildcard src/*.S)
 OBJS := $(addprefix $(OBJDIR)/, $(patsubst %.S,%.o,$(patsubst %.cpp,%.o,$(patsubst %.c,%.o,$(SRCS)))))
 TARGET_SRCS := $(wildcard $(TARGET_DIR)/riscv/*.c) $(wildcard $(TARGET_DIR)/riscv/*.S)
 TARGET_OBJS := $(addprefix $(OBJDIR)/, $(patsubst %.S,%.o,$(patsubst %.c,%.o,$(TARGET_SRCS))))
@@ -16,7 +16,8 @@ TARGET_OBJS := $(addprefix $(OBJDIR)/, $(patsubst %.S,%.o,$(patsubst %.c,%.o,$(T
 include $(TARGET_DIR)/target.mk
 
 LDFLAGS += -ffreestanding -nostdlib 
-LDFLAGS += -Wl,-T,$(TARGET_DIR)/$(LDSCRIPT),-Map,$(OBJDIR)/$(PROJ_NAME).map,--print-memory-usage
+#LDFLAGS += -specs=nano.specs -specs=nosys.specs #-lc_nano
+LDFLAGS += -Wl,-Bstatic,-T,$(TARGET_DIR)/$(LDSCRIPT),-Map,$(OBJDIR)/$(PROJ_NAME).map,--print-memory-usage
 
 CCFLAGS += -I $(TARGET_DIR)/hal
 CXXFLAGS += -I $(TARGET_DIR)/hal

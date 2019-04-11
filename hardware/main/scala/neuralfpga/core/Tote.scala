@@ -1,4 +1,4 @@
-package neuralfpga.umlp
+package neuralfpga.core
 
 import jderobot.lib.blackbox.lattice.ice40.{SB_GB, SB_RGBA_DRV, SB_RGBA_DRV_Config}
 import jderobot.lib.lattice.ice40.{Bram, Spram}
@@ -6,93 +6,74 @@ import spinal.core._
 import spinal.lib._
 import spinal.lib.bus.misc._
 import spinal.lib.bus.simple._
-import spinal.lib.com.jtag.Jtag
-import spinal.lib.io.TriStateArray
 import vexriscv._
 import vexriscv.plugin._
 
-case class UMlpUp5kParameters(clkFrequency : HertzNumber,
-                              noComplianceOverhead : Boolean = false,
-                              withRfBypass : Boolean = false,
-                              withPipelining : Boolean = false,
-                              withCsr : Boolean = true,
-                              hardwareBreakpointsCount: Int = 2,
-                              withJtag : Boolean = false){
-
+case class ToteParameters(clkFrequency : HertzNumber){
   //Create a VexRiscv configuration from the SoC configuration
   def toVexRiscvConfig() = {
+    //from vexriscv.demo.GenSmallAndProductive
     val config = VexRiscvConfig(
       withMemoryStage = true,
       withWriteBackStage = true,
-      List(
+      plugins = List(
         new IBusSimplePlugin(
           resetVector = 0x80000000l,
           cmdForkOnSecondStage = false,
           cmdForkPersistence = false,
           prediction = NONE,
           catchAccessFault = false,
-          compressedGen = false,
-          injectorStage = false,
-          rspHoldValue = !withPipelining,
-          singleInstructionPipeline = !withPipelining,
-          busLatencyMin = 1,
-          pendingMax = if(withPipelining) 3 else 1
+          compressedGen = false
         ),
         new DBusSimplePlugin(
-          catchAddressMisaligned = withCsr && !noComplianceOverhead,
+          catchAddressMisaligned = false,
           catchAccessFault = false
         ),
+        new CsrPlugin(CsrPluginConfig.smallest),
         new DecoderSimplePlugin(
           catchIllegalInstruction = false
         ),
         new RegFilePlugin(
           regFileReadyKind = plugin.SYNC,
-          zeroBoot = true,
-          x0Init = false,
-          readInExecute = true,
-          syncUpdateOnStall = withPipelining
+          zeroBoot = false
         ),
         new IntAluPlugin,
         new SrcPlugin(
           separatedAddSub = false,
-          executeInsertion = true,
-          decodeAddSub = false
+          executeInsertion = false
         ),
         new LightShifterPlugin(),
+        new HazardSimplePlugin(
+          bypassExecute           = true,
+          bypassMemory            = true,
+          bypassWriteBack         = true,
+          bypassWriteBackBuffer   = true,
+          pessimisticUseSrc       = false,
+          pessimisticWriteRegFile = false,
+          pessimisticAddressMatch = false
+        ),
         new BranchPlugin(
-          earlyBranch = true,
-          catchAddressMisaligned = withCsr && !noComplianceOverhead,
-          fenceiGenAsAJump = withPipelining,
-          fenceiGenAsANop = !withPipelining
+          earlyBranch = false,
+          catchAddressMisaligned = false
         ),
         new YamlPlugin("cpu0.yaml")
       )
     )
-    if(withPipelining){
-      config.plugins += new HazardSimplePlugin(
-        bypassExecute = withRfBypass,
-        bypassMemory  = withRfBypass,
-        bypassWriteBackBuffer = withRfBypass
-      )
-    } else {
-      config.plugins += new NoHazardPlugin
-    }
-    if(withCsr) config.plugins +=
-      new CsrPlugin(CsrPluginConfig.smallest(mtvecInit = 0x80000020l))
     config
   }
 }
 
-object UMlpUp5kParameters {
+object ToteParameters {
   def default = up5kDefault
-  def up5kDefault = UMlpUp5kParameters(clkFrequency = 12 MHz)
+  def up5kDefault = ToteParameters(
+    clkFrequency = 12 MHz
+  )
 }
 
-case class UMlpUp5k(p: UMlpUp5kParameters) extends Component {
+case class Tote(p: ToteParameters) extends Component {
   val io = new Bundle {
     val clk, reset = in Bool()
     val leds = out Bits(3 bits)
-    val jtag = p.withJtag generate slave(Jtag())
   }
 
   val resetCtrlClockDomain = ClockDomain(
@@ -117,18 +98,8 @@ case class UMlpUp5k(p: UMlpUp5kParameters) extends Component {
 
     //Create all reset used later in the design
     val systemResetSet = False
-    val debugReset = SB_GB(RegNext(resetUnbuffered))
     val systemReset = SB_GB(RegNext(resetUnbuffered || BufferCC(systemResetSet)))
   }
-
-  val debugClockDomain = ClockDomain(
-    clock = io.clk,
-    reset = resetCtrl.debugReset,
-    frequency = FixedFrequency(p.clkFrequency),
-    config = ClockDomainConfig(
-      resetKind = spinal.core.SYNC
-    )
-  )
 
   val systemClockDomain = ClockDomain(
     clock = io.clk,
@@ -141,17 +112,19 @@ case class UMlpUp5k(p: UMlpUp5kParameters) extends Component {
 
   //There is defined the whole SoC stuff
   val system = new ClockingArea(systemClockDomain) {
-    val busConfig = PipelinedMemoryBusConfig(addressWidth = 32, dataWidth = 32)
+    //interconnect
+    val interconnect = PipelinedMemoryBusInterconnect()
 
-    //Define the different memory busses and interconnect that will be use in the SoC
+    //busses
+    val busConfig = PipelinedMemoryBusConfig(addressWidth = 32, dataWidth = 32)
     val dBus = PipelinedMemoryBus(busConfig)
     val iBus = PipelinedMemoryBus(busConfig)
     val slowBus = PipelinedMemoryBus(busConfig)
-    val interconnect = PipelinedMemoryBusInterconnect()
+
 
     //Define slave/peripheral components
     val dRam = Spram()
-    val iRam = Bram(onChipRamSize = 16 KiB)
+    val iRam = Bram(onChipRamSize = 8 KiB)
     //iRam.mem.initBigInt(for(i <- 0 until 256) yield BigInt(0x13))
 
     val peripherals = Peripherals()
@@ -187,11 +160,8 @@ case class UMlpUp5k(p: UMlpUp5kParameters) extends Component {
       m.rsp << s.rsp.stage()
     }
 
-
     //Map the CPU into the SoC depending the Plugins used
     val cpuConfig = p.toVexRiscvConfig()
-    p.withJtag generate cpuConfig.add(new DebugPlugin(debugClockDomain, p.hardwareBreakpointsCount))
-    //    io.jtag.flatten.filter(_.isOutput).foreach(_.assignDontCare())
 
     val cpu = new VexRiscv(cpuConfig)
     for (plugin <- cpu.plugins) plugin match {
@@ -201,17 +171,13 @@ case class UMlpUp5k(p: UMlpUp5kParameters) extends Component {
         plugin.externalInterrupt := False //Not used
         plugin.timerInterrupt := peripherals.io.mTimeInterrupt
       }
-      case plugin : DebugPlugin         => plugin.debugClockDomain{
-        resetCtrl.systemResetSet setWhen(RegNext(plugin.io.resetOut))
-        io.jtag <> plugin.io.bus.fromJtag()
-      }
       case _ =>
     }
   }
 }
 
 //Up5kEvn board specific toplevel.
-case class UMlpUp5kEvn(p : UMlpUp5kParameters) extends Component{
+case class ToteUp5kEvn(p : ToteParameters) extends Component{
   val io = new Bundle {
     val clk  = in  Bool()
     val leds = new Bundle {
@@ -222,7 +188,7 @@ case class UMlpUp5kEvn(p : UMlpUp5kParameters) extends Component{
   val clkBuffer = SB_GB()
   clkBuffer.USER_SIGNAL_TO_GLOBAL_BUFFER <> io.clk
 
-  val soc = UMlpUp5k(p)
+  val soc = Tote(p)
 
   soc.io.clk      <> clkBuffer.GLOBAL_BUFFER_OUTPUT
   soc.io.reset    <> False
@@ -242,20 +208,20 @@ case class UMlpUp5kEvn(p : UMlpUp5kParameters) extends Component{
   ledDriver.RGB2 <> io.leds.r
 }
 
-object UMlpUp5k {
+object Tote {
   def main(args: Array[String]) {
     val outRtlDir = if (!args.isEmpty) args(0) else  "rtl"
     SpinalConfig(
       targetDirectory = outRtlDir
-    ).generateVerilog(UMlpUp5k(UMlpUp5kParameters.default))
+    ).generateVerilog(Tote(ToteParameters.default))
   }
 }
 
-object UMlpUp5kEvn {
+object ToteUp5kEvn {
   def main(args: Array[String]) {
     val outRtlDir = if (!args.isEmpty) args(0) else  "rtl"
     SpinalConfig(
       targetDirectory = outRtlDir
-    ).generateVerilog(UMlpUp5kEvn(UMlpUp5kParameters.default))
+    ).generateVerilog(ToteUp5kEvn(ToteParameters.default))
   }
 }

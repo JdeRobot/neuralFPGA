@@ -1,9 +1,9 @@
-#include "VUMlpUp5k.h"
-#include "VUMlpUp5k_SB_SPRAM256KA.h"
-#include "VUMlpUp5k_Bram.h"
-#include "VUMlpUp5k_Spram.h"
-#include "VUMlpUp5k_UMlpUp5k.h"
-#include "VUMlpUp5k_VexRiscv.h"
+#include "VTote.h"
+#include "VTote_SB_SPRAM256KA.h"
+#include "VTote_Bram.h"
+#include "VTote_Spram.h"
+#include "VTote_Tote.h"
+#include "VTote_VexRiscv.h"
 #include "testbench.h"
 
 #include <fstream>
@@ -30,13 +30,13 @@ char* argString(const char *key, int argc, char **argv){
 
 class VexRiscvTracer : public Agent{
 public:
-	VUMlpUp5k_VexRiscv *cpu;
+	VTote_VexRiscv *cpu;
   bool trace_instruction;
   bool trace_reg;
 	ofstream instructionTraces;
 	ofstream regTraces;
 
-	VexRiscvTracer(VUMlpUp5k_VexRiscv *cpu, bool trace_instruction, bool trace_reg){
+	VexRiscvTracer(VTote_VexRiscv *cpu, bool trace_instruction, bool trace_reg){
 		this->cpu = cpu;
     this->trace_instruction = trace_instruction;
     this->trace_reg = trace_reg;
@@ -56,6 +56,10 @@ public:
 		if(this->trace_reg && cpu->writeBack_RegFilePlugin_regFileWrite_valid == 1 && cpu->writeBack_RegFilePlugin_regFileWrite_payload_address != 0){
 		 	regTraces << " PC " << hex << setw(8) <<  cpu->writeBack_PC << " : reg[" << dec << setw(2) << (uint32_t)cpu->writeBack_RegFilePlugin_regFileWrite_payload_address << "] = " << hex << setw(8) << cpu->writeBack_RegFilePlugin_regFileWrite_payload_data << endl;
 		}
+
+    if (cpu->writeBack_arbitration_isFiring && cpu->writeBack_INSTRUCTION == 0x00050013) { //mv	zero,a0
+      cout << (char)cpu->RegFilePlugin_regFile[10];
+    }
   }
 };
 
@@ -64,24 +68,17 @@ public:
 	CData *io_leds;
   CData io_leds_prev;
   bool trace_leds_state;
-  bool trace_reg;
-	ofstream instructionTraces;
-	ofstream regTraces;
 
 	LedsTracer(CData *io_leds, bool trace_leds_state){
 		this->io_leds = io_leds;
     this->io_leds_prev = 0xFF;
     this->trace_leds_state = trace_leds_state;
-    if (this->trace_leds_state) {
-      instructionTraces.open ("ledsTrace.log");
-    }
 	}
 
 	virtual void preCycle(uint64_t time){
     if (this->trace_leds_state && *(this->io_leds) != this->io_leds_prev){
       this->io_leds_prev = *this->io_leds;
       cout << "LEDS: " << bitset<3>(*this->io_leds) << endl;
-		 	//instructionTraces << " PC " << hex << setw(8) <<  cpu->writeBack_PC << " : " << hex << setw(8) <<  cpu->writeBack_INSTRUCTION << endl;
 		}
   }
 };
@@ -89,8 +86,8 @@ public:
 int main(int argc, char **argv) {
   cout << "Simulation start" << endl;
   Verilated::commandArgs(argc, argv);
-  TESTBENCH<VUMlpUp5k> *tb =
-      new TESTBENCH<VUMlpUp5k>(TIMESCALE / SYSTEM_CLK_HZ);
+  TESTBENCH<VTote> *tb =
+      new TESTBENCH<VTote>(TIMESCALE / SYSTEM_CLK_HZ);
  
   char *iramBin = argString("--iramBin", argc, argv);
   if (iramBin) {
@@ -102,10 +99,10 @@ int main(int argc, char **argv) {
     uint8_t *ram_bin = new uint8_t[ram_binSize];
     fread(ram_bin, 1, ram_binSize, ram_binFile);
 
-    uint8_t *ram0 = (uint8_t *)tb->dut->UMlpUp5k->system_iRam->mem_symbol0;
-    uint8_t *ram1 = (uint8_t *)tb->dut->UMlpUp5k->system_iRam->mem_symbol1;
-    uint8_t *ram2 = (uint8_t *)tb->dut->UMlpUp5k->system_iRam->mem_symbol2;
-    uint8_t *ram3 = (uint8_t *)tb->dut->UMlpUp5k->system_iRam->mem_symbol3;
+    uint8_t *ram0 = (uint8_t *)tb->dut->Tote->system_iRam->mem_symbol0;
+    uint8_t *ram1 = (uint8_t *)tb->dut->Tote->system_iRam->mem_symbol1;
+    uint8_t *ram2 = (uint8_t *)tb->dut->Tote->system_iRam->mem_symbol2;
+    uint8_t *ram3 = (uint8_t *)tb->dut->Tote->system_iRam->mem_symbol3;
     
     for (int i = 0; i < ram_binSize; i++) {
       switch (i & 3) {
@@ -132,8 +129,8 @@ int main(int argc, char **argv) {
     iss >> timeout;
   }
 
-  tb->add(new VexRiscvTracer(tb->dut->UMlpUp5k->system_cpu, true, true));
-  tb->add(new LedsTracer(&tb->dut->io_leds, true));
+  tb->add(new VexRiscvTracer(tb->dut->Tote->system_cpu, true, true));
+  tb->add(new LedsTracer(&tb->dut->io_leds, false));
 
   tb->reset();
 

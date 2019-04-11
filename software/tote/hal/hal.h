@@ -1,5 +1,5 @@
-#ifndef UMLP_H
-#define UMLP_H
+#ifndef HAL_H
+#define HAL_H
 
 #include "leds.h"
 
@@ -7,4 +7,4 @@
 
 #define LEDS    ((Leds_Reg*)(0xF0000000))
 
-#endif //UMLP_H
+#endif //HAL_H
