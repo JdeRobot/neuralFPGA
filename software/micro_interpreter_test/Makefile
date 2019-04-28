@@ -44,7 +44,7 @@ LDFLAGS += -ffreestanding -nostdlib
 LDFLAGS += -lm -lc -lgcc
 LDFLAGS += -Wl,--gc-sections,-Bstatic,-T,$(TARGET_DIR)/$(LDSCRIPT),-Map,$(OBJDIR)/$(PROJ_NAME).map,--print-memory-usage
 
-INCLUDES := -I$(TENSORFLOW_PATH) -I../../libs/gemmlowp -I./third_party/flatbuffers/include -I $(TARGET_DIR)/hal
+INCLUDES := -I$(TENSORFLOW_PATH) -I../../libs/gemmlowp -I../../libs/flatbuffers/include -I $(TARGET_DIR)/hal
 
 CXXFLAGS += -DNDEBUG -DTF_LITE_STATIC_MEMORY -DTF_LITE_MCU_DEBUG_LOG -DTF_LITE_USE_GLOBAL_ROUND 
 CCFLAGS +=  -DNDEBUG -DTF_LITE_STATIC_MEMORY -DTF_LITE_MCU_DEBUG_LOG -DTF_LITE_USE_GLOBAL_ROUND

@@ -44,8 +44,8 @@ LDFLAGS += -Wl,--gc-sections,-Bstatic,-T,$(TARGET_DIR)/$(LDSCRIPT),-Map,$(OBJDIR
 CCFLAGS += -I $(TARGET_DIR)/hal
 CXXFLAGS += -I $(TARGET_DIR)/hal -fcheck-new
 
-CXXFLAGS += -DNDEBUG -DTF_LITE_STATIC_MEMORY -DTF_LITE_MCU_DEBUG_LOG -DTF_LITE_USE_GLOBAL_ROUND -I. -I../../libs/gemmlowp -I./third_party/flatbuffers/include
-CCFLAGS +=  -DNDEBUG -DTF_LITE_STATIC_MEMORY -DTF_LITE_MCU_DEBUG_LOG -DTF_LITE_USE_GLOBAL_ROUND -I. -I../../libs/gemmlowp -I./third_party/flatbuffers/include
+CXXFLAGS += -DNDEBUG -DTF_LITE_STATIC_MEMORY -DTF_LITE_MCU_DEBUG_LOG -DTF_LITE_USE_GLOBAL_ROUND -I. -I../../libs/gemmlowp -I../../libs/flatbuffers/include
+CCFLAGS +=  -DNDEBUG -DTF_LITE_STATIC_MEMORY -DTF_LITE_MCU_DEBUG_LOG -DTF_LITE_USE_GLOBAL_ROUND -I. -I../../libs/gemmlowp -I../../libs/flatbuffers/include
 
 CXXFLAGS += -g -Os -fno-exceptions -fno-rtti -fno-unwind-tables -ffunction-sections -fdata-sections -funsigned-char -Wall -Wno-sign-compare
 CCFLAGS += -g -Os -fno-exceptions -fno-unwind-tables -ffunction-sections -fdata-sections -funsigned-char -Wall -Wno-sign-compare

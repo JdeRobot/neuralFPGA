@@ -4,3 +4,6 @@
 [submodule "src/test/c/libs/gemmlowp"]
 	path = libs/gemmlowp
 	url = https://github.com/google/gemmlowp.git
+[submodule "libs/flatbuffers"]
+	path = libs/flatbuffers
+	url = https://github.com/google/flatbuffers.git
