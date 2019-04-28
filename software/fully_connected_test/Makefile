@@ -8,23 +8,27 @@ BUILDDIR := $(ROOTDIR)/build
 OBJDIR := $(BUILDDIR)/obj
 BINDIR := $(BUILDDIR)
 
-SRCS := tensorflow/lite/experimental/micro/micro_error_reporter.cc \
-		tensorflow/lite/experimental/micro/micro_mutable_op_resolver.cc \
-		tensorflow/lite/experimental/micro/tote/debug_log.cc \
-		tensorflow/lite/experimental/micro/debug_log_numbers.cc \
-		tensorflow/lite/experimental/micro/simple_tensor_allocator.cc \
-		tensorflow/lite/experimental/micro/micro_interpreter.cc \
-		tensorflow/lite/experimental/micro/kernels/depthwise_conv.cc \
-		tensorflow/lite/experimental/micro/kernels/softmax.cc \
-		tensorflow/lite/experimental/micro/kernels/all_ops_resolver.cc \
-		tensorflow/lite/experimental/micro/kernels/fully_connected.cc \
-		tensorflow/lite/c/c_api_internal.c \
-		tensorflow/lite/core/api/error_reporter.cc \
-		tensorflow/lite/core/api/flatbuffer_conversions.cc \
-		tensorflow/lite/core/api/op_resolver.cc \
-		tensorflow/lite/kernels/kernel_util.cc \
-		tensorflow/lite/kernels/internal/quantization_util.cc \
-		src/main.cpp
+TENSORFLOW_PATH ?= $(HOME)/src/tensorflow
+
+SRCS := $(TENSORFLOW_PATH)/tensorflow/lite/experimental/micro/micro_error_reporter.cc \
+		$(TENSORFLOW_PATH)/tensorflow/lite/experimental/micro/micro_mutable_op_resolver.cc \
+		$(TENSORFLOW_PATH)/tensorflow/lite/experimental/micro/debug_log.cc \
+		$(TENSORFLOW_PATH)/tensorflow/lite/experimental/micro/debug_log_numbers.cc \
+		$(TENSORFLOW_PATH)/tensorflow/lite/experimental/micro/simple_tensor_allocator.cc \
+		$(TENSORFLOW_PATH)/tensorflow/lite/experimental/micro/micro_interpreter.cc \
+		$(TENSORFLOW_PATH)/tensorflow/lite/experimental/micro/kernels/depthwise_conv.cc \
+		$(TENSORFLOW_PATH)/tensorflow/lite/experimental/micro/kernels/softmax.cc \
+		$(TENSORFLOW_PATH)/tensorflow/lite/experimental/micro/kernels/pooling.cc \
+		$(TENSORFLOW_PATH)/tensorflow/lite/experimental/micro/kernels/all_ops_resolver.cc \
+		$(TENSORFLOW_PATH)/tensorflow/lite/experimental/micro/kernels/fully_connected.cc \
+		$(TENSORFLOW_PATH)/tensorflow/lite/c/c_api_internal.c \
+		$(TENSORFLOW_PATH)/tensorflow/lite/core/api/error_reporter.cc \
+		$(TENSORFLOW_PATH)/tensorflow/lite/core/api/flatbuffer_conversions.cc \
+		$(TENSORFLOW_PATH)/tensorflow/lite/core/api/op_resolver.cc \
+		$(TENSORFLOW_PATH)/tensorflow/lite/kernels/kernel_util.cc \
+		$(TENSORFLOW_PATH)/tensorflow/lite/kernels/internal/quantization_util.cc \
+		$(TENSORFLOW_PATH)/tensorflow/lite/experimental/micro/kernels/fully_connected_test.cc
+		#src/main.cpp
 
 TARGET_SRCS := $(TARGET_DIR)/riscv/start.S $(TARGET_DIR)/riscv/init.c
 LIBC_SRCS := $(wildcard $(TARGET_DIR)/libc/stdio/*.c) $(wildcard $(TARGET_DIR)/libc/stdio/*.S) $(wildcard $(TARGET_DIR)/libc/stdlib/*.c)
@@ -41,13 +45,12 @@ LDFLAGS += -ffreestanding -nostdlib
 LDFLAGS += -lm -lc -lgcc
 LDFLAGS += -Wl,--gc-sections,-Bstatic,-T,$(TARGET_DIR)/$(LDSCRIPT),-Map,$(OBJDIR)/$(PROJ_NAME).map,--print-memory-usage
 
-CCFLAGS += -I $(TARGET_DIR)/hal
-CXXFLAGS += -I $(TARGET_DIR)/hal -fcheck-new
+INCLUDES := -I$(TENSORFLOW_PATH) -I../../libs/gemmlowp -I../../libs/flatbuffers/include -I $(TARGET_DIR)/hal
 
-CXXFLAGS += -DNDEBUG -DTF_LITE_STATIC_MEMORY -DTF_LITE_MCU_DEBUG_LOG -DTF_LITE_USE_GLOBAL_ROUND -I. -I../../libs/gemmlowp -I../../libs/flatbuffers/include
-CCFLAGS +=  -DNDEBUG -DTF_LITE_STATIC_MEMORY -DTF_LITE_MCU_DEBUG_LOG -DTF_LITE_USE_GLOBAL_ROUND -I. -I../../libs/gemmlowp -I../../libs/flatbuffers/include
+CXXFLAGS += -DNDEBUG -DTF_LITE_STATIC_MEMORY -DTF_LITE_MCU_DEBUG_LOG -DTF_LITE_USE_GLOBAL_ROUND 
+CCFLAGS +=  -DNDEBUG -DTF_LITE_STATIC_MEMORY -DTF_LITE_MCU_DEBUG_LOG -DTF_LITE_USE_GLOBAL_ROUND
 
-CXXFLAGS += -g -Os -fno-exceptions -fno-rtti -fno-unwind-tables -ffunction-sections -fdata-sections -funsigned-char -Wall -Wno-sign-compare
+CXXFLAGS += -g -Os -fno-exceptions -fno-rtti -fno-unwind-tables -ffunction-sections -fdata-sections -funsigned-char -fcheck-new -Wall -Wno-sign-compare
 CCFLAGS += -g -Os -fno-exceptions -fno-unwind-tables -ffunction-sections -fdata-sections -funsigned-char -Wall -Wno-sign-compare
 
 all: $(BINDIR)/$(PROJ_NAME).bin $(BINDIR)/$(PROJ_NAME).asm

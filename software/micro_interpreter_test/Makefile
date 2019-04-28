@@ -26,8 +26,7 @@ SRCS := $(TENSORFLOW_PATH)/tensorflow/lite/experimental/micro/micro_error_report
 		$(TENSORFLOW_PATH)/tensorflow/lite/core/api/op_resolver.cc \
 		$(TENSORFLOW_PATH)/tensorflow/lite/kernels/kernel_util.cc \
 		$(TENSORFLOW_PATH)/tensorflow/lite/kernels/internal/quantization_util.cc  \
-		src/main.cpp
-		#$(TENSORFLOW_PATH)/tensorflow/lite/experimental/micro/micro_interpreter_test.cc
+		$(TENSORFLOW_PATH)/tensorflow/lite/experimental/micro/micro_interpreter_test.cc
 
 TARGET_SRCS := $(TARGET_DIR)/riscv/start.S $(TARGET_DIR)/riscv/init.c
 LIBC_SRCS := $(wildcard $(TARGET_DIR)/libc/stdio/*.c) $(wildcard $(TARGET_DIR)/libc/stdio/*.S) $(wildcard $(TARGET_DIR)/libc/stdlib/*.c)
@@ -55,7 +54,6 @@ CCFLAGS += -g -Os -fno-exceptions -fno-unwind-tables -ffunction-sections -fdata-
 all: $(BINDIR)/$(PROJ_NAME).bin $(BINDIR)/$(PROJ_NAME).asm
 
 $(OBJDIR)/%.o: %.cc
-	echo $(INCLUDES)
 	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
 
