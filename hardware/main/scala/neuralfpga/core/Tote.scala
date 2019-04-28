@@ -1,15 +1,19 @@
 package neuralfpga.core
 
-import jderobot.lib.blackbox.lattice.ice40.{SB_GB, SB_RGBA_DRV, SB_RGBA_DRV_Config}
 import jderobot.lib.lattice.ice40.{Bram, Spram}
 import spinal.core._
 import spinal.lib._
 import spinal.lib.bus.misc._
 import spinal.lib.bus.simple._
+import spinal.lib.com.jtag.Jtag
+import spinal.lib.io.{Gpio, TriStateArray}
 import vexriscv._
 import vexriscv.plugin._
 
-case class ToteParameters(clkFrequency : HertzNumber){
+case class ToteParameters(clkFrequency : HertzNumber,
+                          gpioA : Gpio.Parameter,
+                          hardwareBreakpointsCount : Int,
+                          withJtag : Boolean){
   //Create a VexRiscv configuration from the SoC configuration
   def toVexRiscvConfig() = {
     //from vexriscv.demo.GenSmallAndProductive
@@ -38,6 +42,7 @@ case class ToteParameters(clkFrequency : HertzNumber){
           zeroBoot = false
         ),
         new IntAluPlugin,
+        new MulDivIterativePlugin,
         new SrcPlugin(
           separatedAddSub = false,
           executeInsertion = false
@@ -66,20 +71,31 @@ case class ToteParameters(clkFrequency : HertzNumber){
 object ToteParameters {
   def default = up5kDefault
   def up5kDefault = ToteParameters(
-    clkFrequency = 12 MHz
+    clkFrequency = 12 MHz,
+    gpioA = Gpio.Parameter(
+      width = 8
+    ),
+    hardwareBreakpointsCount = 2,
+    withJtag = true
   )
 }
 
 case class Tote(p: ToteParameters) extends Component {
   val io = new Bundle {
+    //Clocks / reset
     val clk, reset = in Bool()
-    val leds = out Bits(3 bits)
+
+    //Main components IO
+    val jtag = p.withJtag generate slave(Jtag())
+
+    //Peripherals IO
+    val gpioA = master(TriStateArray(p.gpioA.width bits))
   }
 
   val resetCtrlClockDomain = ClockDomain(
     clock = io.clk,
     config = ClockDomainConfig(
-      resetKind = BOOT //Bitstream loaded FF
+      resetKind = spinal.core.BOOT
     )
   )
 
@@ -98,8 +114,18 @@ case class Tote(p: ToteParameters) extends Component {
 
     //Create all reset used later in the design
     val systemResetSet = False
-    val systemReset = SB_GB(RegNext(resetUnbuffered || BufferCC(systemResetSet)))
+    val debugReset = RegNext(resetUnbuffered)
+    val systemReset = RegNext(resetUnbuffered || BufferCC(systemResetSet))
   }
+
+  val debugClockDomain = ClockDomain(
+    clock = io.clk,
+    reset = resetCtrl.debugReset,
+    frequency = FixedFrequency(p.clkFrequency),
+    config = ClockDomainConfig(
+      resetKind = spinal.core.SYNC
+    )
+  )
 
   val systemClockDomain = ClockDomain(
     clock = io.clk,
@@ -119,49 +145,40 @@ case class Tote(p: ToteParameters) extends Component {
     val busConfig = PipelinedMemoryBusConfig(addressWidth = 32, dataWidth = 32)
     val dBus = PipelinedMemoryBus(busConfig)
     val iBus = PipelinedMemoryBus(busConfig)
-    val slowBus = PipelinedMemoryBus(busConfig)
+    val mainBus = PipelinedMemoryBus(busConfig)
 
 
     //Define slave/peripheral components
-    val dRam = Spram()
-    val iRam = Bram(onChipRamSize = 8 KiB)
-    //iRam.mem.initBigInt(for(i <- 0 until 256) yield BigInt(0x13))
+    val ram = Spram()
 
-    val peripherals = Peripherals()
-    peripherals.io.leds <> io.leds
+    val gpioCtrl = PipelinedMemoryGpio(p.gpioA)
+    gpioCtrl.io.gpio <> io.gpioA
+
+    val machineTimer = MachineTimer()
 
     //Map the different slave/peripherals into the interconnect
     interconnect.addSlaves(
-      iRam.io.bus         -> SizeMapping(0x80000000l,  16 KiB),
-      dRam.io.bus         -> SizeMapping(0x80004000l,  64 KiB),
-      peripherals.io.bus  -> SizeMapping(0xF0000000l, 256 Byte),
-      slowBus             -> DefaultMapping
+      ram.io.bus          -> SizeMapping(0x80000000l, 64 KiB),
+      gpioCtrl.io.bus     -> SizeMapping(0xF0000000l,  4 KiB),
+      machineTimer.io.bus -> SizeMapping(0xF0001000l,  4 KiB),
+      mainBus             -> DefaultMapping
     )
 
     //Specify which master bus can access to which slave/peripheral
     interconnect.addMasters(
-      dBus   -> List(dRam.io.bus, slowBus),
-      iBus   -> List(iRam.io.bus, slowBus),
-      slowBus-> List(dRam.io.bus, iRam.io.bus, peripherals.io.bus)
+      dBus   -> List(mainBus),
+      iBus   -> List(mainBus),
+      mainBus-> List(ram.io.bus, gpioCtrl.io.bus, machineTimer.io.bus)
     )
 
-    //Add pipelining to buses connections to get a better maximal frequancy
-    interconnect.setConnector(dBus, slowBus){(m, s) =>
-      m.cmd.halfPipe() >> s.cmd
-      m.rsp            << s.rsp
-    }
-    interconnect.setConnector(iBus, slowBus){(m, s) =>
-      m.cmd.halfPipe() >> s.cmd
-      m.rsp            << s.rsp
-    }
-
-    interconnect.setConnector(slowBus){(m, s) =>
-      m.cmd >> s.cmd
-      m.rsp << s.rsp.stage()
+    interconnect.setConnector(mainBus){(m, s) =>
+      m.cmd.s2mPipe() >> s.cmd
+      m.rsp << s.rsp
     }
 
     //Map the CPU into the SoC depending the Plugins used
     val cpuConfig = p.toVexRiscvConfig()
+    p.withJtag generate cpuConfig.add(new DebugPlugin(debugClockDomain, p.hardwareBreakpointsCount))
 
     val cpu = new VexRiscv(cpuConfig)
     for (plugin <- cpu.plugins) plugin match {
@@ -169,7 +186,11 @@ case class Tote(p: ToteParameters) extends Component {
       case plugin : DBusSimplePlugin => dBus << plugin.dBus.toPipelinedMemoryBus()
       case plugin : CsrPlugin => {
         plugin.externalInterrupt := False //Not used
-        plugin.timerInterrupt := peripherals.io.mTimeInterrupt
+        plugin.timerInterrupt := machineTimer.io.mTimeInterrupt
+      }
+      case plugin : DebugPlugin => plugin.debugClockDomain{
+        resetCtrl.systemResetSet setWhen RegNext(plugin.io.resetOut)
+        io.jtag <> plugin.io.bus.fromJtag()
       }
       case _ =>
     }
@@ -177,36 +198,36 @@ case class Tote(p: ToteParameters) extends Component {
 }
 
 //Up5kEvn board specific toplevel.
-case class ToteUp5kEvn(p : ToteParameters) extends Component{
-  val io = new Bundle {
-    val clk  = in  Bool()
-    val leds = new Bundle {
-      val r,g,b = out Bool()
-    }
-  }
-
-  val clkBuffer = SB_GB()
-  clkBuffer.USER_SIGNAL_TO_GLOBAL_BUFFER <> io.clk
-
-  val soc = Tote(p)
-
-  soc.io.clk      <> clkBuffer.GLOBAL_BUFFER_OUTPUT
-  soc.io.reset    <> False
-
-
-  val ledDriver = SB_RGBA_DRV(SB_RGBA_DRV_Config(
-    currentMode = "0b1", rgb0Current = "0b000001", rgb1Current = "0b000001",rgb2Current = "0b000001"
-  ))
-  ledDriver.CURREN   := True
-  ledDriver.RGBLEDEN := True
-  ledDriver.RGB0PWM  := soc.io.leds(0)
-  ledDriver.RGB1PWM  := soc.io.leds(1)
-  ledDriver.RGB2PWM  := soc.io.leds(2)
-
-  ledDriver.RGB0 <> io.leds.b
-  ledDriver.RGB1 <> io.leds.g
-  ledDriver.RGB2 <> io.leds.r
-}
+//case class ToteUp5kEvn(p : ToteParameters) extends Component{
+//  val io = new Bundle {
+//    val clk  = in  Bool()
+//    val leds = new Bundle {
+//      val r,g,b = out Bool()
+//    }
+//  }
+//
+//  val clkBuffer = SB_GB()
+//  clkBuffer.USER_SIGNAL_TO_GLOBAL_BUFFER <> io.clk
+//
+//  val soc = Tote(p)
+//
+//  soc.io.clk      <> clkBuffer.GLOBAL_BUFFER_OUTPUT
+//  soc.io.reset    <> False
+//
+//
+//  val ledDriver = SB_RGBA_DRV(SB_RGBA_DRV_Config(
+//    currentMode = "0b1", rgb0Current = "0b000001", rgb1Current = "0b000001",rgb2Current = "0b000001"
+//  ))
+//  ledDriver.CURREN   := True
+//  ledDriver.RGBLEDEN := True
+//  ledDriver.RGB0PWM  := soc.io.gpioA(0)
+//  ledDriver.RGB1PWM  := soc.io.leds(1)
+//  ledDriver.RGB2PWM  := soc.io.leds(2)
+//
+//  ledDriver.RGB0 <> io.leds.b
+//  ledDriver.RGB1 <> io.leds.g
+//  ledDriver.RGB2 <> io.leds.r
+//}
 
 object Tote {
   def main(args: Array[String]) {
@@ -217,11 +238,11 @@ object Tote {
   }
 }
 
-object ToteUp5kEvn {
-  def main(args: Array[String]) {
-    val outRtlDir = if (!args.isEmpty) args(0) else  "rtl"
-    SpinalConfig(
-      targetDirectory = outRtlDir
-    ).generateVerilog(ToteUp5kEvn(ToteParameters.default))
-  }
-}
+//object ToteUp5kEvn {
+//  def main(args: Array[String]) {
+//    val outRtlDir = if (!args.isEmpty) args(0) else  "rtl"
+//    SpinalConfig(
+//      targetDirectory = outRtlDir
+//    ).generateVerilog(ToteUp5kEvn(ToteParameters.default))
+//  }
+//}

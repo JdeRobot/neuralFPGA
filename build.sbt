@@ -9,8 +9,8 @@ lazy val root = (project in file("."))
     scalaSource in Compile := baseDirectory.value / "hardware" / "main" / "scala",
     scalaSource in Test    := baseDirectory.value / "hardware" / "test" / "scala",
     libraryDependencies ++= Seq(
-      "com.github.spinalhdl" % "spinalhdl-core_2.11" % "1.3.2",
-      "com.github.spinalhdl" % "spinalhdl-lib_2.11" % "1.3.2",
+      "com.github.spinalhdl" % "spinalhdl-core_2.11" % "1.3.3",
+      "com.github.spinalhdl" % "spinalhdl-lib_2.11" % "1.3.3",
       "org.scalactic" %% "scalactic" % "3.0.5",
       "org.scalatest" %% "scalatest" % "3.0.5" % "test"
     )
