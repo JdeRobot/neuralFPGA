@@ -9,8 +9,8 @@ MEMORY
 
 RAM_START_ADDRESS   = 0x80000000;       /* Must be the same value MEMORY region ram ORIGIN above. */
 RAM_SIZE            = 64k;              /* Must be the same value MEMORY region ram LENGTH above. */
-STACK_SIZE          = 2k;               /* needs to be calculated for your application */             
-HEAP_SIZE           = 2k;               /* needs to be calculated for your application */
+STACK_SIZE          = 4k;               /* needs to be calculated for your application */             
+/*HEAP_SIZE           = 1k;*/               /* needs to be calculated for your application */
 
 SECTIONS
 {
@@ -103,6 +103,7 @@ SECTIONS
   /* End of uninitialized data segment */
   _end = .;
   
+  /* No heap
   .heap : ALIGN(0x10)
   {
     __heap_start = .;
@@ -111,6 +112,7 @@ SECTIONS
     . = ALIGN(0x10);
     _heap_end = __heap_end;
   } > ram
+  */
   
   .stack : ALIGN(0x10)
   {

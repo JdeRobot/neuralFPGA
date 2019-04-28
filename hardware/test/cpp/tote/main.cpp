@@ -1,6 +1,5 @@
 #include "VTote.h"
 #include "VTote_SB_SPRAM256KA.h"
-#include "VTote_Bram.h"
 #include "VTote_Spram.h"
 #include "VTote_Tote.h"
 #include "VTote_VexRiscv.h"
@@ -49,39 +48,39 @@ public:
 	}
 
 	virtual void preCycle(uint64_t time){
-    if (this->trace_instruction && cpu->writeBack_arbitration_isFiring){
-		 	instructionTraces << " PC " << hex << setw(8) <<  cpu->writeBack_PC << " : " << hex << setw(8) <<  cpu->writeBack_INSTRUCTION << endl;
+    if (this->trace_instruction && cpu->lastStageIsFiring){
+		 	instructionTraces << " PC " << hex << setw(8) <<  cpu->lastStagePc << " : " << hex << setw(8) <<  cpu->lastStageInstruction << endl;
 		}
 		
-		if(this->trace_reg && cpu->writeBack_RegFilePlugin_regFileWrite_valid == 1 && cpu->writeBack_RegFilePlugin_regFileWrite_payload_address != 0){
-		 	regTraces << " PC " << hex << setw(8) <<  cpu->writeBack_PC << " : reg[" << dec << setw(2) << (uint32_t)cpu->writeBack_RegFilePlugin_regFileWrite_payload_address << "] = " << hex << setw(8) << cpu->writeBack_RegFilePlugin_regFileWrite_payload_data << endl;
+		if(this->trace_reg && cpu->lastStageRegFileWrite_valid == 1 && cpu->lastStageRegFileWrite_payload_address != 0){
+		 	regTraces << " PC " << hex << setw(8) <<  cpu->lastStagePc << " : reg[" << dec << setw(2) << (uint32_t)cpu->lastStageRegFileWrite_payload_address << "] = " << hex << setw(8) << cpu->lastStageRegFileWrite_payload_data << endl;
 		}
 
-    if (cpu->writeBack_arbitration_isFiring && cpu->writeBack_INSTRUCTION == 0x00050013) { //mv	zero,a0
+    if (cpu->lastStageIsFiring && cpu->lastStageInstruction == 0x00050013) { //mv	zero,a0
       cout << (char)cpu->RegFilePlugin_regFile[10];
     }
   }
 };
 
-class LedsTracer : public Agent{
-public:
-	CData *io_leds;
-  CData io_leds_prev;
-  bool trace_leds_state;
+// class LedsTracer : public Agent{
+// public:
+// 	CData *io_leds;
+//   CData io_leds_prev;
+//   bool trace_leds_state;
 
-	LedsTracer(CData *io_leds, bool trace_leds_state){
-		this->io_leds = io_leds;
-    this->io_leds_prev = 0xFF;
-    this->trace_leds_state = trace_leds_state;
-	}
+// 	LedsTracer(CData *io_leds, bool trace_leds_state){
+// 		this->io_leds = io_leds;
+//     this->io_leds_prev = 0xFF;
+//     this->trace_leds_state = trace_leds_state;
+// 	}
 
-	virtual void preCycle(uint64_t time){
-    if (this->trace_leds_state && *(this->io_leds) != this->io_leds_prev){
-      this->io_leds_prev = *this->io_leds;
-      cout << "LEDS: " << bitset<3>(*this->io_leds) << endl;
-		}
-  }
-};
+// 	virtual void preCycle(uint64_t time){
+//     if (this->trace_leds_state && *(this->io_leds) != this->io_leds_prev){
+//       this->io_leds_prev = *this->io_leds;
+//       cout << "LEDS: " << bitset<3>(*this->io_leds) << endl;
+// 		}
+//   }
+// };
 
 int main(int argc, char **argv) {
   cout << "Simulation start" << endl;
@@ -89,34 +88,32 @@ int main(int argc, char **argv) {
   TESTBENCH<VTote> *tb =
       new TESTBENCH<VTote>(TIMESCALE / SYSTEM_CLK_HZ);
  
-  char *iramBin = argString("--iramBin", argc, argv);
-  if (iramBin) {
-    assert(access(iramBin, F_OK) != -1);
-    FILE *ram_binFile = fopen(iramBin, "r");
+  char *ramBin = argString("--ramBin", argc, argv);
+  if (ramBin) {
+    assert(access(ramBin, F_OK) != -1);
+    FILE *ram_binFile = fopen(ramBin, "r");
     fseek(ram_binFile, 0, SEEK_END);
     uint32_t ram_binSize = ftell(ram_binFile);
     fseek(ram_binFile, 0, SEEK_SET);
     uint8_t *ram_bin = new uint8_t[ram_binSize];
     fread(ram_bin, 1, ram_binSize, ram_binFile);
 
-    uint8_t *ram0 = (uint8_t *)tb->dut->Tote->system_iRam->mem_symbol0;
-    uint8_t *ram1 = (uint8_t *)tb->dut->Tote->system_iRam->mem_symbol1;
-    uint8_t *ram2 = (uint8_t *)tb->dut->Tote->system_iRam->mem_symbol2;
-    uint8_t *ram3 = (uint8_t *)tb->dut->Tote->system_iRam->mem_symbol3;
-    
+    uint8_t *ram0 = (uint8_t *)tb->dut->Tote->system_ram->mems_0->mem;
+    uint8_t *ram1 = (uint8_t *)tb->dut->Tote->system_ram->mems_1->mem;
+
     for (int i = 0; i < ram_binSize; i++) {
       switch (i & 3) {
         case 0:
-          ram0[i / 4] = ram_bin[i];
+          ram0[i / 4 * 2 + 0] = ram_bin[i];
           break;
         case 1:
-          ram1[i / 4] = ram_bin[i];
+          ram0[i / 4 * 2 + 1] = ram_bin[i];
           break;
         case 2:
-          ram2[i / 4] = ram_bin[i];
+          ram1[i / 4 * 2 + 0] = ram_bin[i];
           break;
         case 3:
-          ram3[i / 4] = ram_bin[i];
+          ram1[i / 4 * 2 + 1] = ram_bin[i];
           break;
       }
     }
@@ -130,7 +127,7 @@ int main(int argc, char **argv) {
   }
 
   tb->add(new VexRiscvTracer(tb->dut->Tote->system_cpu, true, true));
-  tb->add(new LedsTracer(&tb->dut->io_leds, false));
+  //tb->add(new LedsTracer(&tb->dut->io_leds, false));
 
   tb->reset();
 

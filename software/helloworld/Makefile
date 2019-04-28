@@ -12,21 +12,19 @@ SRCS := $(wildcard src/*.c) $(wildcard src/*.S)
 OBJS := $(addprefix $(OBJDIR)/, $(patsubst %.S,%.o,$(patsubst %.cpp,%.o,$(patsubst %.c,%.o,$(SRCS)))))
 TARGET_SRCS := $(wildcard $(TARGET_DIR)/riscv/*.c) $(wildcard $(TARGET_DIR)/riscv/*.S)
 TARGET_OBJS := $(addprefix $(OBJDIR)/, $(patsubst %.S,%.o,$(patsubst %.c,%.o,$(TARGET_SRCS))))
+LIBC_SRCS := $(wildcard $(TARGET_DIR)/libc/stdio/*.c) $(wildcard $(TARGET_DIR)/libc/stdio/*.S) $(wildcard $(TARGET_DIR)/libc/stdlib/*.c)
+LIBC_OBJS := $(addprefix $(OBJDIR)/, $(patsubst %.S,%.o,$(patsubst %.c,%.o,$(LIBC_SRCS))))
 
 include $(TARGET_DIR)/target.mk
 
 LDFLAGS += -ffreestanding -nostdlib 
-#LDFLAGS += -specs=nano.specs -specs=nosys.specs #-lc_nano
+LDFLAGS += -lgcc
 LDFLAGS += -Wl,-Bstatic,-T,$(TARGET_DIR)/$(LDSCRIPT),-Map,$(OBJDIR)/$(PROJ_NAME).map,--print-memory-usage
 
-CCFLAGS += -I $(TARGET_DIR)/hal
-CXXFLAGS += -I $(TARGET_DIR)/hal
+CCFLAGS += -I $(TARGET_DIR)/hal -g -Os
+CXXFLAGS += -I $(TARGET_DIR)/hal -g -Os
 
 all: $(BINDIR)/$(PROJ_NAME).bin $(BINDIR)/$(PROJ_NAME).asm
-
-$(OBJDIR)/%.o: %.cpp
-	@mkdir -p $(dir $@)
-	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
 
 $(OBJDIR)/%.o: %.c
 	@mkdir -p $(dir $@)
@@ -36,8 +34,8 @@ $(OBJDIR)/%.o: %.S
 	@mkdir -p $(dir $@)
 	$(CC) $(CCFLAGS) $(INCLUDES) -c $< -o $@
 
-$(BINDIR)/$(PROJ_NAME).elf : $(OBJS) $(TARGET_OBJS)
-	$(CC) $(CCFLAGS) -o $@ $(OBJS) $(TARGET_OBJS) $(LDFLAGS)
+$(BINDIR)/$(PROJ_NAME).elf : $(OBJS) $(TARGET_OBJS) $(LIBC_OBJS)
+	$(CC) $(CCFLAGS) -o $@ $^ $(LDFLAGS)
 
 %.bin: %.elf
 	@mkdir -p $(dir $@)

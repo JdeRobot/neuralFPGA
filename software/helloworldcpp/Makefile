@@ -1,4 +1,4 @@
-PROJ_NAME := blink
+PROJ_NAME := helloworldcpp
 DEBUG := no
 
 TARGET_DIR := $(realpath ../tote)
@@ -8,18 +8,24 @@ BUILDDIR := $(ROOTDIR)/build
 OBJDIR := $(BUILDDIR)/obj
 BINDIR := $(BUILDDIR)
 
-SRCS := $(wildcard src/*.c)
+SRCS := $(wildcard src/*.cpp)
 OBJS := $(addprefix $(OBJDIR)/, $(patsubst %.S,%.o,$(patsubst %.cpp,%.o,$(patsubst %.c,%.o,$(SRCS)))))
 TARGET_SRCS := $(wildcard $(TARGET_DIR)/riscv/*.c) $(wildcard $(TARGET_DIR)/riscv/*.S)
 TARGET_OBJS := $(addprefix $(OBJDIR)/, $(patsubst %.S,%.o,$(patsubst %.c,%.o,$(TARGET_SRCS))))
+LIBC_SRCS := $(wildcard $(TARGET_DIR)/libc/stdio/*.c) $(wildcard $(TARGET_DIR)/libc/stdio/*.S) $(wildcard $(TARGET_DIR)/libc/stdlib/*.c)
+LIBC_OBJS := $(addprefix $(OBJDIR)/, $(patsubst %.S,%.o,$(patsubst %.c,%.o,$(LIBC_SRCS))))
+SUPCPP_SRCS := $(wildcard $(TARGET_DIR)/supc++/*.cpp)
+SUPCPP_OBJS := $(addprefix $(OBJDIR)/, $(patsubst %.cpp,%.o,$(SUPCPP_SRCS)))
 
 include $(TARGET_DIR)/target.mk
 
-LDFLAGS += -ffreestanding -nostdlib 
-LDFLAGS += -Wl,-T,$(TARGET_DIR)/$(LDSCRIPT),-Map,$(OBJDIR)/$(PROJ_NAME).map,--print-memory-usage
+LDFLAGS += -ffreestanding -nostdlib
+LDFLAGS += -lgcc
+LDFLAGS += -Wl,-Bstatic,-T,$(TARGET_DIR)/$(LDSCRIPT),-Map,$(OBJDIR)/$(PROJ_NAME).map,--print-memory-usage
 
-CCFLAGS += -I $(TARGET_DIR)/hal
-CXXFLAGS += -I $(TARGET_DIR)/hal
+CCFLAGS += -I $(TARGET_DIR)/hal -g -Os
+# -fcheck-new removes warning from new retuning null
+CXXFLAGS += -I $(TARGET_DIR)/hal -g -Os -fcheck-new
 
 all: $(BINDIR)/$(PROJ_NAME).bin $(BINDIR)/$(PROJ_NAME).asm
 
@@ -35,8 +41,8 @@ $(OBJDIR)/%.o: %.S
 	@mkdir -p $(dir $@)
 	$(CC) $(CCFLAGS) $(INCLUDES) -c $< -o $@
 
-$(BINDIR)/$(PROJ_NAME).elf : $(OBJS) $(TARGET_OBJS)
-	$(CC) $(CCFLAGS) -o $@ $(OBJS) $(TARGET_OBJS) $(LDFLAGS)
+$(BINDIR)/$(PROJ_NAME).elf : $(OBJS) $(TARGET_OBJS) $(LIBC_OBJS) $(SUPCPP_OBJS)
+	$(CXX) $(CCFLAGS) -o $@ $^ $(LDFLAGS)
 
 %.bin: %.elf
 	@mkdir -p $(dir $@)
