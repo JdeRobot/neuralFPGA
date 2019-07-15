@@ -1,9 +1,9 @@
 #include <hal.h>
 #include <stdio.h>
+#include <inttypes.h>
 
+int main() {
+  printf("%" PRIu64 ": Hello World!\n", TIMER->COUNTER);
 
-void main() {
-  while (1) {
-    printf("%llu: Hello World!\n", TIMER->COUNTER);
-  }
+  return 0;
 }

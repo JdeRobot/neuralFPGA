@@ -1,6 +1,7 @@
 // adapted from https://raw.githubusercontent.com/RISCV-on-Microsemi-FPGA/SoftConsole/master/riscv-simple-baremetal-bootloader/riscv_hal/init.c
 // with https://github.com/RISCV-on-Microsemi-FPGA/SoftConsole/pull/19
 #include <stdint.h>
+#include <stdlib.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -50,13 +51,7 @@ void _init(void)
     zero_section(&__sbss_start, &__sbss_end);
     zero_section(&__bss_start, &__bss_end);
     
-    main();
-}
-
-/* Function called after main() finishes */
-void
-_fini()
-{
+    exit(main());
 }
 
 #ifdef __cplusplus

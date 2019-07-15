@@ -1,5 +1,4 @@
 PROJ_NAME := load_tflite_model
-DEBUG := no
 
 TARGET_DIR := $(realpath ../tote)
 TARGET := tote
@@ -10,21 +9,11 @@ BINDIR := $(BUILDDIR)
 
 SRCS := src/main.cpp src/model_data.S
 OBJS := $(addprefix $(OBJDIR)/, $(patsubst %.S,%.o,$(patsubst %.cpp,%.o,$(SRCS))))
-TARGET_SRCS := $(wildcard $(TARGET_DIR)/riscv/*.c) $(wildcard $(TARGET_DIR)/riscv/*.S)
-TARGET_OBJS := $(addprefix $(OBJDIR)/, $(patsubst %.S,%.o,$(patsubst %.c,%.o,$(TARGET_SRCS))))
-LIBC_SRCS := $(wildcard $(TARGET_DIR)/libc/stdio/*.c) $(wildcard $(TARGET_DIR)/libc/stdio/*.S) $(wildcard $(TARGET_DIR)/libc/stdlib/*.c)
-LIBC_OBJS := $(addprefix $(OBJDIR)/, $(patsubst %.S,%.o,$(patsubst %.c,%.o,$(LIBC_SRCS))))
-SUPCPP_SRCS := $(wildcard $(TARGET_DIR)/supc++/*.cpp)
-SUPCPP_OBJS := $(addprefix $(OBJDIR)/, $(patsubst %.cpp,%.o,$(SUPCPP_SRCS)))
 
 include $(TARGET_DIR)/target.mk
 
-LDFLAGS += -ffreestanding -nostdlib
-LDFLAGS += -lgcc
-LDFLAGS += -Wl,-Bstatic,-T,$(TARGET_DIR)/$(LDSCRIPT),-Map,$(OBJDIR)/$(PROJ_NAME).map,--print-memory-usage
-
-CCFLAGS += -I $(TARGET_DIR)/hal -DNDEBUG -DMODEL_DATA_FILE=\"src/model.tflite\" -g -Os
-CXXFLAGS += -I $(TARGET_DIR)/hal -fcheck-new -DNDEBUG -I /home/dlobato/src/flatbuffers/include -g -Os #-fno-exceptions -fno-rtti -fno-use-cxa-atexit
+CCFLAGS += -DNDEBUG -DMODEL_DATA_FILE=\"src/model.tflite\" -g -Os
+CXXFLAGS += -fcheck-new -DNDEBUG -I /home/dlobato/src/flatbuffers/include -g -Os
 
 all: $(BINDIR)/$(PROJ_NAME).bin $(BINDIR)/$(PROJ_NAME).asm
 
@@ -44,7 +33,7 @@ $(OBJDIR)/%.o: %.S
 	@mkdir -p $(dir $@)
 	$(CC) $(CCFLAGS) $(INCLUDES) -c $< -o $@
 
-$(BINDIR)/$(PROJ_NAME).elf : $(OBJS) $(TARGET_OBJS) $(LIBC_OBJS) $(SUPCPP_OBJS)
+$(BINDIR)/$(PROJ_NAME).elf : $(OBJS) $(TARGET_OBJS)
 	$(CXX) $(CCFLAGS) -o $@ $^ $(LDFLAGS)
 
 %.bin: %.elf

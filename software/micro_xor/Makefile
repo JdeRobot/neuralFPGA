@@ -1,4 +1,4 @@
-PROJ_NAME := micro_interpreter_test
+PROJ_NAME := micro_xor
 
 TARGET_DIR := $(realpath ../tote)
 TARGET := tote
@@ -16,9 +16,6 @@ SRCS := $(TENSORFLOW_PATH)/tensorflow/lite/experimental/micro/micro_error_report
 		$(TARGET_DIR)/tensorflow/lite/experimental/micro/debug_log.cc \
 		$(TENSORFLOW_PATH)/tensorflow/lite/experimental/micro/debug_log_numbers.cc \
 		$(TENSORFLOW_PATH)/tensorflow/lite/experimental/micro/micro_interpreter.cc \
-		$(TENSORFLOW_PATH)/tensorflow/lite/experimental/micro/kernels/depthwise_conv.cc \
-		$(TENSORFLOW_PATH)/tensorflow/lite/experimental/micro/kernels/softmax.cc \
-		$(TENSORFLOW_PATH)/tensorflow/lite/experimental/micro/kernels/all_ops_resolver.cc \
 		$(TENSORFLOW_PATH)/tensorflow/lite/experimental/micro/kernels/fully_connected.cc \
 		$(TENSORFLOW_PATH)/tensorflow/lite/c/c_api_internal.c \
 		$(TENSORFLOW_PATH)/tensorflow/lite/core/api/error_reporter.cc \
@@ -26,17 +23,23 @@ SRCS := $(TENSORFLOW_PATH)/tensorflow/lite/experimental/micro/micro_error_report
 		$(TENSORFLOW_PATH)/tensorflow/lite/core/api/op_resolver.cc \
 		$(TENSORFLOW_PATH)/tensorflow/lite/kernels/kernel_util.cc \
 		$(TENSORFLOW_PATH)/tensorflow/lite/kernels/internal/quantization_util.cc  \
-		$(TENSORFLOW_PATH)/tensorflow/lite/experimental/micro/micro_interpreter_test.cc
+		src/logistic.cpp \
+		src/model_data.S \
+		src/main.cpp
 
-OBJS := $(addprefix $(OBJDIR)/, $(patsubst %.cpp,%.o,$(patsubst %.cc,%.o,$(patsubst %.c,%.o,$(SRCS)))))
+OBJS := $(addprefix $(OBJDIR)/, $(patsubst %.S,%.o,$(patsubst %.cpp,%.o,$(patsubst %.cc,%.o,$(patsubst %.c,%.o,$(SRCS))))))
 
 include $(TARGET_DIR)/target.mk
 
 INCLUDES += -I$(TENSORFLOW_PATH) -I../../libs/gemmlowp -I../../libs/flatbuffers/include
 
-DEFS := -DNDEBUG -DTF_LITE_STATIC_MEMORY -DTF_LITE_MCU_DEBUG_LOG -DTF_LITE_USE_GLOBAL_ROUND 
+DEFS := -DNDEBUG -DTF_LITE_STATIC_MEMORY -DTF_LITE_MCU_DEBUG_LOG \
+	-DTF_LITE_USE_GLOBAL_ROUND -DMODEL_DATA_FILE=\"src/model.tflite\" \
+	-DTFLITE_EMULATE_FLOAT
 CXXFLAGS += $(DEFS) -g -Os -funsigned-char -Wno-sign-compare
 CCFLAGS += $(DEFS) -g -Os -funsigned-char -Wno-sign-compare
+
+LDFLAGS += -lm
 
 all: $(BINDIR)/$(PROJ_NAME).bin $(BINDIR)/$(PROJ_NAME).asm
 

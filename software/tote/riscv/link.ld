@@ -4,13 +4,14 @@ ENTRY(_start)
 
 MEMORY
 {
-    ram (rwx) : ORIGIN = 0x80000000, LENGTH = 64k
+    rom (rx) : ORIGIN = 0x80000000, LENGTH = 64k
+    ram (rwx) : ORIGIN = 0x90000000, LENGTH = 64k
 }
 
-RAM_START_ADDRESS   = 0x80000000;       /* Must be the same value MEMORY region ram ORIGIN above. */
-RAM_SIZE            = 64k;              /* Must be the same value MEMORY region ram LENGTH above. */
-STACK_SIZE          = 4k;               /* needs to be calculated for your application */             
-/*HEAP_SIZE           = 1k;*/               /* needs to be calculated for your application */
+ROM_START_ADDRESS   = 0x80000000;       /* Must be the same value MEMORY region rom ORIGIN above. */
+ROM_SIZE            = 64k;              /* Must be the same value MEMORY region rom LENGTH above. */
+STACK_SIZE          = 16k;              /* needs to be calculated for your application */             
+HEAP_SIZE           = 4k;               /* needs to be calculated for your application */
 
 SECTIONS
 {
@@ -52,7 +53,7 @@ SECTIONS
     PROVIDE_HIDDEN (__fini_array_end = .);
     . = ALIGN(0x10);
     
-  } > ram
+  } > rom
 
   /* short/global data section */
   .sdata : ALIGN(0x10)
@@ -65,7 +66,7 @@ SECTIONS
     *(.sdata .sdata.* .gnu.linkonce.s.*)
     . = ALIGN(0x10);
     __sdata_end = .;
-  } > ram
+  } > ram AT>rom
 
   /* data section */
   .data : ALIGN(0x10)
@@ -77,7 +78,7 @@ SECTIONS
     *(.data .data.* .gnu.linkonce.d.*)
     . = ALIGN(0x10);
     __data_end = .;
-  } > ram
+  } > ram AT>rom
 
   /* sbss section */
   .sbss : ALIGN(0x10)
@@ -103,7 +104,7 @@ SECTIONS
   /* End of uninitialized data segment */
   _end = .;
   
-  /* No heap
+  /* No heap*/
   .heap : ALIGN(0x10)
   {
     __heap_start = .;
@@ -112,7 +113,7 @@ SECTIONS
     . = ALIGN(0x10);
     _heap_end = __heap_end;
   } > ram
-  */
+  /**/
   
   .stack : ALIGN(0x10)
   {
