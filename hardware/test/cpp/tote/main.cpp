@@ -207,6 +207,7 @@ int main(int argc, char **argv) {
           symbols.get_symbol(j, name, value, size, bind, type, section_index,
                              other);
           if (name == "_exit") {
+            std::cerr << "_exit at " << value << std::endl;
             exit_address = static_cast<uint32_t>(value);
           }
         }
