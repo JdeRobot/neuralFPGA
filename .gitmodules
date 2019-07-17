@@ -7,3 +7,6 @@
 [submodule "libs/flatbuffers"]
 	path = libs/flatbuffers
 	url = https://github.com/google/flatbuffers.git
+[submodule "libs/ELFIO"]
+	path = libs/ELFIO
+	url = https://github.com/serge1/ELFIO.git

@@ -149,7 +149,8 @@ case class Tote(p: ToteParameters) extends Component {
 
 
     //Define slave/peripheral components
-    val ram = Spram()
+    val iRam = Spram()
+    val dRam = Spram()
 
     val gpioCtrl = PipelinedMemoryGpio(p.gpioA)
     gpioCtrl.io.gpio <> io.gpioA
@@ -158,7 +159,8 @@ case class Tote(p: ToteParameters) extends Component {
 
     //Map the different slave/peripherals into the interconnect
     interconnect.addSlaves(
-      ram.io.bus          -> SizeMapping(0x80000000l, 64 KiB),
+      iRam.io.bus          -> SizeMapping(0x80000000l, 64 KiB),
+      dRam.io.bus          -> SizeMapping(0x90000000l, 64 KiB),
       gpioCtrl.io.bus     -> SizeMapping(0xF0000000l,  4 KiB),
       machineTimer.io.bus -> SizeMapping(0xF0001000l,  4 KiB),
       mainBus             -> DefaultMapping
@@ -166,14 +168,24 @@ case class Tote(p: ToteParameters) extends Component {
 
     //Specify which master bus can access to which slave/peripheral
     interconnect.addMasters(
-      dBus   -> List(mainBus),
-      iBus   -> List(mainBus),
-      mainBus-> List(ram.io.bus, gpioCtrl.io.bus, machineTimer.io.bus)
+      iBus   -> List(iRam.io.bus, mainBus),
+      dBus   -> List(dRam.io.bus, mainBus),
+      mainBus-> List(iRam.io.bus, dRam.io.bus, gpioCtrl.io.bus, machineTimer.io.bus)
     )
 
+    //Add pipelining to busses connections to get a better maximal frequency
+    interconnect.setConnector(dBus, mainBus){(m, s) =>
+      m.cmd.halfPipe() >> s.cmd
+      m.rsp            << s.rsp
+    }
+    interconnect.setConnector(iBus, mainBus){(m, s) =>
+      m.cmd.halfPipe() >> s.cmd
+      m.rsp            << s.rsp
+    }
+
     interconnect.setConnector(mainBus){(m, s) =>
-      m.cmd.s2mPipe() >> s.cmd
-      m.rsp << s.rsp
+      m.cmd >> s.cmd
+      m.rsp << s.rsp.stage()
     }
 
     //Map the CPU into the SoC depending the Plugins used

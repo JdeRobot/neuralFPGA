@@ -1,15 +1,15 @@
 TOPLEVEL = Tote
 ROOT_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
-PROJ_TOP_DIR = $(ROOT_DIR)/../../../..
+PROJ_TOP_DIR = $(realpath $(ROOT_DIR)/../../../..)
 
 VERILOGS = ${TOPLEVEL}.v
-HEADERS  = ../common/testbench.h
+HEADERS  = ${PROJ_TOP_DIR}/hardware/test/cpp/common/testbench.h
 SRCS     = main.cpp
 
 TRACE ?= no
 DEBUG ?= no
 
-CFLAGS ?= -I../../common -std=c++11
+CFLAGS ?= -I${PROJ_TOP_DIR}/hardware/test/cpp/common -I${PROJ_TOP_DIR}/libs/ELFIO -std=c++11
 VERILATOR_ARGS ?= --gdbbt -Wno-UNOPTFLAT -Wno-WIDTH --x-assign unique -I${PROJ_TOP_DIR}/hardware/main/resources/rtl/lattice/ice40
 
 ifeq (${TRACE},yes)
