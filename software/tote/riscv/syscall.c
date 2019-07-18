@@ -43,12 +43,6 @@ void write_hex(int fd, uint32_t hex)
                
 void _exit(int code)
 {
-    const char * message = "\nProgram has exited with code:";
-
-    write(STDOUT_FILENO, message, strlen(message));
-    write_hex(STDERR_FILENO, code);
-    write(STDOUT_FILENO, "\n", 1);
-
     while (1);
 }
 

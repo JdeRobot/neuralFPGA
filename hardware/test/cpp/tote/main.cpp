@@ -232,7 +232,7 @@ int main(int argc, char **argv) {
   while (!tb->done()) {
     tb->tick();
     if (tb->tickCount > timeout) break;
-    if (exit_address != 0 &&
+    if (tb->dut->Tote->system_cpu->lastStageIsFiring &&
         tb->dut->Tote->system_cpu->lastStagePc == exit_address) {
       std::cerr << "PC at _exit. Finish" << std::endl;
       break;
