@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#define TIMER_BASE_ADDR 0xF0001000UL
+#define TIMER_BASE_ADDR 0xA0001000UL
 
 typedef struct
 {

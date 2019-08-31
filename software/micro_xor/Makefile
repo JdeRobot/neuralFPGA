@@ -10,8 +10,7 @@ BINDIR := $(BUILDDIR)
 
 TENSORFLOW_PATH ?= $(HOME)/src/tensorflow
 
-SRCS := $(TENSORFLOW_PATH)/tensorflow/lite/experimental/micro/micro_error_reporter.cc \
-		$(TENSORFLOW_PATH)/tensorflow/lite/experimental/micro/micro_mutable_op_resolver.cc \
+SRCS := $(TENSORFLOW_PATH)/tensorflow/lite/experimental/micro/micro_mutable_op_resolver.cc \
 		$(TENSORFLOW_PATH)/tensorflow/lite/experimental/micro/simple_tensor_allocator.cc \
 		$(TARGET_DIR)/tensorflow/lite/experimental/micro/debug_log.cc \
 		$(TENSORFLOW_PATH)/tensorflow/lite/experimental/micro/debug_log_numbers.cc \

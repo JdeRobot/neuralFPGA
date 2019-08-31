@@ -12,7 +12,7 @@ lazy val root = (project in file("."))
       "com.github.spinalhdl" % "spinalhdl-core_2.11" % "1.3.6",
       "com.github.spinalhdl" % "spinalhdl-lib_2.11" % "1.3.6",
       "org.scalactic" %% "scalactic" % "3.0.5",
-      "org.scalatest" %% "scalatest" % "3.0.5" % "test"
+      "org.scalatest" %% "scalatest" % "3.0.5"
     )
   ).dependsOn(vexRiscv)
 

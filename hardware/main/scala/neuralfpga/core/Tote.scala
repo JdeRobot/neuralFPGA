@@ -161,8 +161,8 @@ case class Tote(p: ToteParameters) extends Component {
     interconnect.addSlaves(
       iRam.io.bus          -> SizeMapping(0x80000000l, 64 KiB),
       dRam.io.bus          -> SizeMapping(0x90000000l, 64 KiB),
-      gpioCtrl.io.bus     -> SizeMapping(0xF0000000l,  4 KiB),
-      machineTimer.io.bus -> SizeMapping(0xF0001000l,  4 KiB),
+      gpioCtrl.io.bus     -> SizeMapping(0xA0000000l,  4 KiB),
+      machineTimer.io.bus -> SizeMapping(0xA0001000l,  4 KiB),
       mainBus             -> DefaultMapping
     )
 

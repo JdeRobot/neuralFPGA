@@ -34,8 +34,7 @@
 
 #include <stddef.h>
 #include <stdarg.h>
-
-int putchar(int c);
+#include <stdio.h>
 
 static void simple_outputchar(char **str, char c)
 {
@@ -129,7 +128,7 @@ static int simple_outputi(char **out, long long i, int base, int sign, int width
 }
 
 
-static int simple_vsprintf(char **out, char *format, va_list ap)
+static int simple_vsprintf(char **out, const char *format, va_list ap)
 {
 	int width, flags;
 	int pc = 0;
@@ -329,7 +328,7 @@ out:
 	return pc;
 }
 
-int printf(char *fmt, ...)
+int printf(const char *fmt, ...)
 {
 	va_list ap;
 	int r;
@@ -341,7 +340,20 @@ int printf(char *fmt, ...)
 	return r;
 }
 
-int sprintf(char *buf, char *fmt, ...)
+int fprintf(FILE *stream, const char *fmt, ...)
+{
+	(void)stream;
+	va_list ap;
+	int r;
+
+	va_start(ap, fmt);
+	r = simple_vsprintf(NULL, fmt, ap);
+	va_end(ap);
+
+	return r;
+}
+
+int sprintf(char *buf, const char *fmt, ...)
 {
 	va_list ap;
 	int r;
@@ -351,6 +363,17 @@ int sprintf(char *buf, char *fmt, ...)
 	va_end(ap);
 
 	return r;
+}
+
+int vprintf(const char *fmt, va_list ap)
+{
+	return simple_vsprintf(NULL, fmt, ap);
+}
+
+int vfprintf(FILE *stream, const char *fmt, va_list ap)
+{
+	(void)stream;
+	return simple_vsprintf(NULL, fmt, ap);
 }
 
 

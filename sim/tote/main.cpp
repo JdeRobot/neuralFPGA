@@ -1,8 +1,9 @@
-#include "VTote.h"
-#include "VTote_SB_SPRAM256KA.h"
-#include "VTote_Spram.h"
-#include "VTote_Tote.h"
-#include "VTote_VexRiscv.h"
+#include "VTote_tb.h"
+#include "VTote_tb_Tote_tb.h"
+#include "VTote_tb_SB_SPRAM256KA.h"
+#include "VTote_tb_Spram.h"
+#include "VTote_tb_Tote.h"
+#include "VTote_tb_VexRiscv.h"
 #include "testbench.h"
 
 #include <bitset>
@@ -26,15 +27,26 @@ char *argString(const char *key, int argc, char **argv) {
   return NULL;
 }
 
+bool argFlag(const char *key, int argc, char **argv) {
+  bool flagFound = false;
+  for (int idx = 0; idx < argc; idx++) {
+    if (!strcmp(argv[idx], key)) {
+      flagFound = true;
+      break;
+    }
+  }
+  return flagFound;
+}
+
 class VexRiscvTracer : public Agent {
  public:
-  VTote_VexRiscv *cpu;
+  VTote_tb_VexRiscv *cpu;
   bool trace_instruction;
   bool trace_reg;
   std::ofstream instructionTraces;
   std::ofstream regTraces;
 
-  VexRiscvTracer(VTote_VexRiscv *cpu, bool trace_instruction, bool trace_reg) {
+  VexRiscvTracer(VTote_tb_VexRiscv *cpu, bool trace_instruction, bool trace_reg) {
     this->cpu = cpu;
     this->trace_instruction = trace_instruction;
     this->trace_reg = trace_reg;
@@ -99,7 +111,11 @@ class VexRiscvTracer : public Agent {
 
 int main(int argc, char **argv) {
   Verilated::commandArgs(argc, argv);
-  TESTBENCH<VTote> *tb = new TESTBENCH<VTote>(TIMESCALE / SYSTEM_CLK_HZ);
+  TESTBENCH<VTote_tb> *tb = new TESTBENCH<VTote_tb>(TIMESCALE / SYSTEM_CLK_HZ);
+
+  if (argFlag("--jtag-enabled", argc, argv)) {
+    tb->dut->io_enable_jtag = 1;
+  }
 
   char *ramBin = argString("--ramBin", argc, argv);
   if (ramBin) {
@@ -110,7 +126,7 @@ int main(int argc, char **argv) {
     fseek(ram_binFile, 0, SEEK_END);
     uint32_t ram_binSize = ftell(ram_binFile);
 
-    size_t iram_max_size = sizeof(tb->dut->Tote->system_iRam->mems_0->mem) * 2;
+    size_t iram_max_size = sizeof(tb->dut->Tote_tb->tote->system_iRam->mems_0->mem) * 2;
     assert(ram_binSize <= iram_max_size && "iramBin too big");
 
     rewind(ram_binFile);
@@ -119,8 +135,8 @@ int main(int argc, char **argv) {
     assert(read_size == ram_binSize &&
            "Error reading ramBin file, read sized doesn't match");
 
-    uint8_t *ram0 = (uint8_t *)tb->dut->Tote->system_iRam->mems_0->mem;
-    uint8_t *ram1 = (uint8_t *)tb->dut->Tote->system_iRam->mems_1->mem;
+    uint8_t *ram0 = (uint8_t *)tb->dut->Tote_tb->tote->system_iRam->mems_0->mem;
+    uint8_t *ram1 = (uint8_t *)tb->dut->Tote_tb->tote->system_iRam->mems_1->mem;
 
     for (int i = 0; i < ram_binSize; i++) {
       switch (i & 3) {
@@ -154,9 +170,9 @@ int main(int argc, char **argv) {
            "Program is not Little Endian");
     assert(reader.segments.size() > 0 && "Program has no segments to load");
 
-    size_t iram_max_size = sizeof(tb->dut->Tote->system_iRam->mems_0->mem) * 2;
-    uint8_t *ram0 = (uint8_t *)tb->dut->Tote->system_iRam->mems_0->mem;
-    uint8_t *ram1 = (uint8_t *)tb->dut->Tote->system_iRam->mems_1->mem;
+    size_t iram_max_size = sizeof(tb->dut->Tote_tb->tote->system_iRam->mems_0->mem) * 2;
+    uint8_t *ram0 = (uint8_t *)tb->dut->Tote_tb->tote->system_iRam->mems_0->mem;
+    uint8_t *ram1 = (uint8_t *)tb->dut->Tote_tb->tote->system_iRam->mems_1->mem;
 
     // use the load address of the first segment as base address
     ELFIO::Elf64_Addr base_addr = reader.segments[0]->get_physical_address();
@@ -224,7 +240,7 @@ int main(int argc, char **argv) {
 
   std::cerr << "Simulation start" << std::endl;
 
-  tb->add(new VexRiscvTracer(tb->dut->Tote->system_cpu, true, true));
+  tb->add(new VexRiscvTracer(tb->dut->Tote_tb->tote->system_cpu, false, false)); //TODO: use command line flags to enable/disable tracing
   // tb->add(new LedsTracer(&tb->dut->io_leds, false));
 
   tb->reset();
@@ -232,8 +248,8 @@ int main(int argc, char **argv) {
   while (!tb->done()) {
     tb->tick();
     if (tb->tickCount > timeout) break;
-    if (tb->dut->Tote->system_cpu->lastStageIsFiring &&
-        tb->dut->Tote->system_cpu->lastStagePc == exit_address) {
+    if (tb->dut->Tote_tb->tote->system_cpu->lastStageIsFiring &&
+        tb->dut->Tote_tb->tote->system_cpu->lastStagePc == exit_address) {
       std::cerr << "PC at _exit. Finish" << std::endl;
       break;
     }

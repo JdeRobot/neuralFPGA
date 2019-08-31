@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#define GPIOA_BASE_ADDR 0xF0000000UL
+#define GPIOA_BASE_ADDR 0xA0000000UL
 
 typedef struct
 {

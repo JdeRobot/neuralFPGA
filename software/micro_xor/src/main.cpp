@@ -1,7 +1,8 @@
-//#include <hal.h>
+#include <hal.h>
 #include <cstdio>
+#include <cinttypes>
 #include "tensorflow/lite/experimental/micro/micro_mutable_op_resolver.h"
-#include "tensorflow/lite/experimental/micro/micro_error_reporter.h"
+//#include "tensorflow/lite/experimental/micro/micro_error_reporter.h"
 #include "tensorflow/lite/experimental/micro/micro_interpreter.h"
 #include "tensorflow/lite/version.h"
 
@@ -9,6 +10,18 @@ extern char model_data[];
 extern unsigned model_data_size;
 
 namespace tflite {
+
+class MicroErrorReporter : public ErrorReporter {
+ public:
+  ~MicroErrorReporter() {}
+  int Report(const char* format, va_list args) override {
+    return vfprintf(stderr, format, args);
+  }
+
+ private:
+  TF_LITE_REMOVE_VIRTUAL_DELETE
+};
+
 namespace ops {
 namespace micro {
 
@@ -64,7 +77,7 @@ int main() {
   if ((model_input->dims->size != 2) || (model_input->dims->data[0] != 1) ||
       (model_input->dims->data[1] != 2) ||
       (model_input->type != kTfLiteUInt8)) {
-    error_reporter->Report("Bad input tensor parameters in model");
+    error_reporter->Report("Bad input tensor parameters in model\n");
     return 1;
   }
 
@@ -75,7 +88,7 @@ int main() {
                           {true, true, false}};
 
   //printf("%llu: Micro XOR start\n", TIMER->COUNTER);
-  error_reporter->Report("Start");
+  error_reporter->Report("%" PRIu64 ": Start\n", TIMER->COUNTER);
   for (int i = 0; i < 4; i++) {
     // set input
     model_input->data.uint8[0] = test_data[i][0];
@@ -84,7 +97,7 @@ int main() {
     // Run the model
     TfLiteStatus invoke_status = interpreter.Invoke();
     if (invoke_status != kTfLiteOk) {
-      error_reporter->Report("Invoke failed");
+      error_reporter->Report("Invoke failed\n");
       return 1;
     }
 
@@ -92,13 +105,12 @@ int main() {
     TfLiteTensor* output = interpreter.output(0);
     bool output_label = (output->data.uint8[0] > (255 / 2));
     if (test_data[i][2] != output_label) {
-      error_reporter->Report("Expected ouput: %d, got: %d",
+      error_reporter->Report("Expected ouput: %d, got: %d\n",
                              (int)test_data[i][2], (int)output_label);
     }
 
-    //printf("%llu: Micro XOR iteration => %d xor %d = %d\n", TIMER->COUNTER, test_data[i][0], test_data[i][1], test_data[i][2]);
-    error_reporter->Report("Step");
+    error_reporter->Report("%" PRIu64 ": Micro XOR iteration => %d xor %d = %d\n", TIMER->COUNTER, test_data[i][0], test_data[i][1], test_data[i][2]);
   }
-  error_reporter->Report("Done");
+  error_reporter->Report("%" PRIu64 ":Done\n", TIMER->COUNTER);
   //printf("%llu: Micro XOR done\n", TIMER->COUNTER);
 }
