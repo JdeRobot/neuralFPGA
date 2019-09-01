@@ -2,4 +2,7 @@
 
 #include <cstdio>
 
-extern "C" void DebugLog(const char* s) { fprintf(stderr, "%s", s); }
+extern "C" void DebugLog(const char *s)
+{
+    fprintf(stderr, "%s", s);
+}

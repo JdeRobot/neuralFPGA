@@ -13,6 +13,7 @@ TENSORFLOW_PATH ?= $(HOME)/src/tensorflow
 SRCS := $(TENSORFLOW_PATH)/tensorflow/lite/experimental/micro/micro_error_reporter.cc \
 		$(TENSORFLOW_PATH)/tensorflow/lite/experimental/micro/micro_mutable_op_resolver.cc \
 		$(TENSORFLOW_PATH)/tensorflow/lite/experimental/micro/simple_tensor_allocator.cc \
+		$(TENSORFLOW_PATH)/tensorflow/lite/experimental/micro/micro_allocator.cc \
 		$(TARGET_DIR)/tensorflow/lite/experimental/micro/debug_log.cc \
 		$(TENSORFLOW_PATH)/tensorflow/lite/experimental/micro/debug_log_numbers.cc \
 		$(TENSORFLOW_PATH)/tensorflow/lite/experimental/micro/micro_interpreter.cc \
@@ -24,6 +25,7 @@ SRCS := $(TENSORFLOW_PATH)/tensorflow/lite/experimental/micro/micro_error_report
 		$(TENSORFLOW_PATH)/tensorflow/lite/core/api/error_reporter.cc \
 		$(TENSORFLOW_PATH)/tensorflow/lite/core/api/flatbuffer_conversions.cc \
 		$(TENSORFLOW_PATH)/tensorflow/lite/core/api/op_resolver.cc \
+		$(TENSORFLOW_PATH)/tensorflow/lite/core/api/tensor_utils.cc \
 		$(TENSORFLOW_PATH)/tensorflow/lite/kernels/kernel_util.cc \
 		$(TENSORFLOW_PATH)/tensorflow/lite/kernels/internal/quantization_util.cc  \
 		$(TENSORFLOW_PATH)/tensorflow/lite/experimental/micro/micro_interpreter_test.cc
