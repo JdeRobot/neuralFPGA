@@ -10,7 +10,7 @@
 #include <string.h>
 
 #include "encoding.h"
-#include "verilator_debug.h"
+#include "platform_write.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -155,12 +155,10 @@ ssize_t _write(int fd, const void* ptr, size_t len)
   {
     for (jj = 0; jj < len; jj++)
     {
-        //UART_send(&g_stdio_uart, current + jj, 1);
-        noop_write(fd, *(current + jj));
+        platform_write(fd, *(current + jj));
         if (current[jj] == '\n')
         {
-            //UART_send(&g_stdio_uart, (const uint8_t *)"\r", 1);
-            noop_write(fd, '\r');
+            platform_write(fd, '\r');
         }
     }
     return len;

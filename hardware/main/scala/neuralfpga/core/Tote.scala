@@ -246,7 +246,11 @@ object Tote {
     val outRtlDir = if (!args.isEmpty) args(0) else  "rtl"
     SpinalConfig(
       targetDirectory = outRtlDir
-    ).generateVerilog(Tote(ToteParameters.default))
+    ).generateVerilog({
+      val toplevel = Tote(ToteParameters.default)
+      toplevel.system.dBus.addAttribute(Verilator.public)
+      toplevel
+    })
   }
 }
 

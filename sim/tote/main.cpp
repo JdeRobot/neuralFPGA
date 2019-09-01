@@ -81,11 +81,6 @@ class VexRiscvTracer : public Agent {
       }
       regTraces << std::endl;
     }
-
-    if (cpu->lastStageIsFiring &&
-        cpu->lastStageInstruction == 0x00050013) {  // mv	zero,a0
-      std::cout << (char)cpu->RegFilePlugin_regFile[10];
-    }
   }
 };
 
@@ -240,7 +235,12 @@ int main(int argc, char **argv) {
 
   std::cerr << "Simulation start" << std::endl;
 
-  tb->add(new VexRiscvTracer(tb->dut->Tote_tb->tote->system_cpu, false, false)); //TODO: use command line flags to enable/disable tracing
+  tb->add(new VexRiscvTracer(
+      tb->dut->Tote_tb->tote->system_cpu,
+      argFlag("--trace-instructions", argc, argv),
+      argFlag("--trace-registers", argc, argv)
+    )
+  );
   // tb->add(new LedsTracer(&tb->dut->io_leds, false));
 
   tb->reset();
@@ -248,6 +248,13 @@ int main(int argc, char **argv) {
   while (!tb->done()) {
     tb->tick();
     if (tb->tickCount > timeout) break;
+    // system_dBus_cmd is firing && is write cmd && address == OUTPORT, see platform_write.h
+    if (tb->dut->Tote_tb->tote->system_dBus_cmd_valid &&
+        tb->dut->Tote_tb->tote->system_dBus_cmd_ready &&
+        tb->dut->Tote_tb->tote->system_dBus_cmd_payload_write &&
+        tb->dut->Tote_tb->tote->system_dBus_cmd_payload_address == 0xFFFFFFF8) {
+      std::cout << (char)tb->dut->Tote_tb->tote->system_dBus_cmd_payload_data;
+    }
     if (tb->dut->Tote_tb->tote->system_cpu->lastStageIsFiring &&
         tb->dut->Tote_tb->tote->system_cpu->lastStagePc == exit_address) {
       std::cerr << "PC at _exit. Finish" << std::endl;
