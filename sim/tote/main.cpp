@@ -112,45 +112,6 @@ int main(int argc, char **argv) {
     tb->dut->io_enable_jtag = 1;
   }
 
-  char *ramBin = argString("--ramBin", argc, argv);
-  if (ramBin) {
-    assert(access(ramBin, F_OK) != -1);
-    FILE *ram_binFile = fopen(ramBin, "r");
-    assert(ram_binFile != NULL && "Error opening ramBin file");
-
-    fseek(ram_binFile, 0, SEEK_END);
-    uint32_t ram_binSize = ftell(ram_binFile);
-
-    size_t iram_max_size = sizeof(tb->dut->Tote_tb->tote->system_iRam->mems_0->mem) * 2;
-    assert(ram_binSize <= iram_max_size && "iramBin too big");
-
-    rewind(ram_binFile);
-    uint8_t *ram_bin = new uint8_t[ram_binSize];
-    size_t read_size = fread(ram_bin, 1, ram_binSize, ram_binFile);
-    assert(read_size == ram_binSize &&
-           "Error reading ramBin file, read sized doesn't match");
-
-    uint8_t *ram0 = (uint8_t *)tb->dut->Tote_tb->tote->system_iRam->mems_0->mem;
-    uint8_t *ram1 = (uint8_t *)tb->dut->Tote_tb->tote->system_iRam->mems_1->mem;
-
-    for (int i = 0; i < ram_binSize; i++) {
-      switch (i & 3) {
-        case 0:
-          ram0[i / 4 * 2 + 0] = ram_bin[i];
-          break;
-        case 1:
-          ram0[i / 4 * 2 + 1] = ram_bin[i];
-          break;
-        case 2:
-          ram1[i / 4 * 2 + 0] = ram_bin[i];
-          break;
-        case 3:
-          ram1[i / 4 * 2 + 1] = ram_bin[i];
-          break;
-      }
-    }
-  }
-
   uint32_t exit_address = 0;
   char *programPath = argString("--program", argc, argv);
   if (programPath) {
