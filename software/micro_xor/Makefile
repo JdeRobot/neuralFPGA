@@ -41,8 +41,6 @@ DEFS := -DNDEBUG -DTF_LITE_STATIC_MEMORY -DTF_LITE_MCU_DEBUG_LOG \
 CXXFLAGS += $(DEFS) -g -Os -funsigned-char -Wno-sign-compare
 CCFLAGS += $(DEFS) -g -Os -funsigned-char -Wno-sign-compare
 
-LDFLAGS += -lm
-
 all: $(BINDIR)/$(PROJ_NAME).bin $(BINDIR)/$(PROJ_NAME).asm
 
 $(OBJDIR)/%.o: %.cc

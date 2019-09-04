@@ -43,6 +43,12 @@ TfLiteRegistration *Micro_Register_FULLY_CONNECTED()
 } // namespace ops
 } // namespace tflite
 
+// Create an area of memory to use for input, output, and intermediate arrays.
+// The size of this will depend on the model you're using, and may need to be
+// determined by experimentation.
+const int tensor_arena_size = 10 * 1024;
+uint8_t tensor_arena[tensor_arena_size];
+
 int main()
 {
   // Set up logging.
@@ -67,12 +73,6 @@ int main()
                       tflite::ops::micro::Micro_Register_FULLY_CONNECTED(),
                       /* min_version */ 1,
                       /* max_version */ 2);
-
-  // Create an area of memory to use for input, output, and intermediate arrays.
-  // The size of this will depend on the model you're using, and may need to be
-  // determined by experimentation.
-  const int tensor_arena_size = 10 * 1024;
-  uint8_t tensor_arena[tensor_arena_size];
 
   // Build an interpreter to run the model with.
   tflite::MicroInterpreter interpreter(model, resolver, tensor_arena, tensor_arena_size, error_reporter);

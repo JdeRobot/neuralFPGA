@@ -16,11 +16,6 @@
 extern "C" {
 #endif
 
-#undef errno
-int errno;
-
-char *__env[1] = { 0 };
-char **environ = __env;
                
 void _exit(int code)
 {

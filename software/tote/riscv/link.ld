@@ -11,7 +11,7 @@ MEMORY
 ROM_START_ADDRESS   = 0x80000000;       /* Must be the same value MEMORY region rom ORIGIN above. */
 ROM_SIZE            = 64k;              /* Must be the same value MEMORY region rom LENGTH above. */
 STACK_SIZE          = 16k;              /* needs to be calculated for your application */             
-HEAP_SIZE           = 4k;               /* needs to be calculated for your application */
+HEAP_SIZE           = 2k;               /* needs to be calculated for your application */
 
 SECTIONS
 {

@@ -1,6 +1,6 @@
 # Settings for RISCV 32-bit Tote toolchain.
 ifeq ($(TARGET), tote)
-	TARGET_ARCH := rv32im
+	TARGET_ARCH := rv32imc
 
   TARGET_TOOLCHAIN_PREFIX := riscv64-unknown-elf-
   CXX := ${TARGET_TOOLCHAIN_PREFIX}g++
