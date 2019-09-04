@@ -27,7 +27,7 @@ case class ToteParameters(clkFrequency : HertzNumber,
           cmdForkPersistence = false,
           prediction = NONE,
           catchAccessFault = false,
-          compressedGen = false
+          compressedGen = true
         ),
         new DBusSimplePlugin(
           catchAddressMisaligned = false,
@@ -42,7 +42,10 @@ case class ToteParameters(clkFrequency : HertzNumber,
           zeroBoot = false
         ),
         new IntAluPlugin,
-        new MulDivIterativePlugin,
+        new MulDivIterativePlugin(
+          genMul = false
+        ),
+        new MulSimplePlugin(),
         new SrcPlugin(
           separatedAddSub = false,
           executeInsertion = false
