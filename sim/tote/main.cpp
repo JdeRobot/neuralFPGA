@@ -206,6 +206,7 @@ int main(int argc, char **argv) {
 
   tb->reset();
 
+  int exit_code = EXIT_SUCCESS;
   while (!tb->done()) {
     tb->tick();
     if (tb->tickCount > timeout) break;
@@ -214,15 +215,15 @@ int main(int argc, char **argv) {
         tb->dut->Tote_tb->tote->system_dBus_cmd_ready &&
         tb->dut->Tote_tb->tote->system_dBus_cmd_payload_write &&
         tb->dut->Tote_tb->tote->system_dBus_cmd_payload_address == 0xFFFFFFF8) {
-      std::cout << (char)tb->dut->Tote_tb->tote->system_dBus_cmd_payload_data;
+      std::cout << static_cast<char>(tb->dut->Tote_tb->tote->system_dBus_cmd_payload_data);
     }
     if (tb->dut->Tote_tb->tote->system_cpu->lastStageIsFiring &&
         tb->dut->Tote_tb->tote->system_cpu->lastStagePc == exit_address) {
-      std::cerr << "PC at _exit. Finish" << std::endl;
+      exit_code = static_cast<int>(tb->dut->Tote_tb->tote->system_cpu->RegFilePlugin_regFile[10]);//a0
+      std::cerr << "_exit with code=" << exit_code << std::endl;
       break;
     }
   }
-  exit(EXIT_SUCCESS);
-
-  std::cerr << "Simulation end" << std::endl;
+  
+  return exit_code;
 }
