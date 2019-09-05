@@ -1,108 +1,138 @@
-Spinal Base Project
+Neural FPGA
 ============
-This repository is a base SBT project added to help non Scala/SBT native people in their first steps.
+This repository contains the Neural FPGA project.
 
-Just one important note, you need java 8 / jdk 8 (not 9-10-11).
+## About the Neural FPGA project
+Neural FPGA project goal is to produce custom hardware able to do inference over generic neural networks using only open source tools. In order to test our hardware designs we rely on hardware simulations and FPGAs.
 
-On debian : 
+Hardware simulation open source tools have been available since long time (see [Verilator](https://www.veripool.org/wiki/verilator), [Icarus Verilog](http://iverilog.icarus.com/)), but open source tools to generate bitstreams for FPGAs were lacking until recent. Project [IceStorm](http://www.clifford.at/icestorm/) was the first complete tool to program a commercially available FPGA, the [Lattice iCE40](http://www.latticesemi.com/Products/FPGAandCPLD/iCE40.aspx). Following, the project [prjtrellis](https://github.com/SymbiFlow/prjtrellis) is documenting the bitstream format for the more capable [Lattice ECP5](http://www.latticesemi.com/Products/FPGAandCPLD/ECP5). And others are comming.
 
-```sh
-sudo add-apt-repository -y ppa:openjdk-r/ppa
-sudo apt-get update
-sudo apt-get install openjdk-8-jdk -y
+On this project we won't focus on specific FPGAs, but because we would like to run our designs on real hardware we will try to fit our designs to available hardware with open source tools. This for the time being will be Ice40 and ECP5 from Lattice.
 
-#To set the default java
-sudo update-alternatives --config java
-sudo update-alternatives --config javac
+The main output of this project are cores that can do inference on generic neural networks trained with TensorFlow.
+
+## Quick start
+The project depends on several tools, check the requirements on each project to set up your dev environment:
+
+1. [SpinalHDL](https://github.com/SpinalHDL/SpinalHDL) for the hardware description language.
+2. [VexRiscv](https://github.com/SpinalHDL/VexRiscv) used as softcore. Check details on how to install [openOCD](https://github.com/SpinalHDL/VexRiscv#interactive-debug-of-the-simulated-cpu-via-gdb-openocd-and-verilator)
+2. [Verilator](https://www.veripool.org/wiki/verilator) for the hardware simulations
+3. RISC-V GNU Embedded Toolchain to build the software targetted to riscv. YOu can build it yourself (https://github.com/riscv/riscv-gnu-toolchain) or get a pre-built one from https://www.sifive.com or https://github.com/gnu-mcu-eclipse/riscv-none-gcc/releases
+4. [Tensorflow](www.tensorflow.org): To train and do inference.
+
+### Generate core HDL
+To generate verilog for a core run:
+```
+$> cd neuralFPGA
+$> sbt "runMain neuralfpga.core.Tote rtl"
+```
+This will generate the file _rtl/Tote.v_ and _cpu0.yaml_ (used on openocd session)
+
+### Run simulation
+First we need to build the simulator for our core:
+```
+$> cd neuralFPGA/sim/tote
+$> make
+```
+Then we need a program to run on our simulated core. You can use the [hello world example](software/helloworld). Build it with:
+```
+$> cd neuralFPGA/software/helloworld
+$> make
+```
+Run it on the simulator:
+```
+$> cd neuralFPGA/sim/tote
+$> obj_dir/VTote_tb --program ../../software/helloworld/build/helloworld.elf
+Loading program: ../../software/helloworld/build/helloworld.elf
+LOAD  [0] 0x5	0x80000000	0x22f4	0x22f4
+LOAD  [1] 0x6	0x80002300	0x70	0x80
+LOAD  [2] 0x6	0x80002370	0x0	0x10
+LOAD  [3] 0x6	0x80002370	0x0	0x800
+LOAD  [4] 0x6	0x80002370	0x0	0x4000
+_exit at 800000b4
+Simulation start
+586: Hello World!
+_exit with code=0
 ```
 
-## Basics, without any IDE
-
-You need to install SBT
-
-```sh
-echo "deb https://dl.bintray.com/sbt/debian /" | sudo tee -a /etc/apt/sources.list.d/sbt.list
-sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 2EE0EA64E40A89B84B2DF73499E82A75642AC823
-sudo apt-get update
-sudo apt-get install sbt
+### Debug simulation
+The simulated core can be debugged with gdb attached to openocd.
+Start the simulator:
+```
+$> cd neuralFPGA/sim/tote
+$> obj_dir/VTote_tb --jtag-enabled
+Simulation start
+This emulator compiled with JTAG Remote Bitbang client.
+Listening on port 9090
+Attempting to accept client socket
 ```
 
-If you want to run the scala written testbench, you have to be on linux and have Verilator installed (a recent version) :
-
-```sh
-sudo apt-get install git make autoconf g++ flex bison -y  # First time prerequisites
-git clone http://git.veripool.org/git/verilator   # Only first time
-unsetenv VERILATOR_ROOT  # For csh; ignore error if on bash
-unset VERILATOR_ROOT  # For bash
-cd verilator
-git pull        # Make sure we're up-to-date
-git checkout verilator_3_916
-autoconf        # Create ./configure script
-./configure
-make -j$(nproc)
-sudo make install
-cd ..
-echo "DONE"
-
+On a different terminal start openocd:
+```
+$> cd neuralFPGA
+$> openocd -c "set VEXRISCV_YAML cpu0.yaml" -f sim/openocd/tote_remote_bitbang.tcl
+Open On-Chip Debugger 0.10.0+dev-01214-g0ace94f7 (2019-08-27-18:21)
+Licensed under GNU GPL v2
+For bug reports, read
+	http://openocd.org/doc/doxygen/bugs.html
+cpu0.yaml
+Warn : Adapter driver 'remote_bitbang' did not declare which transports it allows; assuming legacy JTAG-only
+Info : only one transport option; autoselect 'jtag'
+Info : set servers polling period to 50ms
+Info : Initializing remote_bitbang driver
+Info : Connecting to localhost:9090
+Info : remote_bitbang driver initialized
+Info : This adapter doesn't support configurable speed
+Info : JTAG tap: fpga_spinal.bridge tap/device found: 0x10001fff (mfg: 0x7ff (<invalid>), part: 0x0001, ver: 0x1)
+Info : Listening on port 3333 for gdb connections
+requesting target halt and executing a soft reset
+Info : Listening on port 6666 for tcl connections
+Info : Listening on port 4444 for telnet connections
 ```
 
-Clone or download this repository.
+And last on another terminal start gdb:
+```
+$> cd neuralFPGA
+$> riscv64-unknown-elf-gdb software/helloworld/build/helloworld.elf
+GNU gdb (SiFive GDB 8.3.0-2019.05.3) 8.3
+Copyright (C) 2019 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+Type "show copying" and "show warranty" for details.
+This GDB was configured as "--host=x86_64-linux-gnu --target=riscv64-unknown-elf".
+Type "show configuration" for configuration details.
+For bug reporting instructions, please see:
+<https://github.com/sifive/freedom-tools/issues>.
+Find the GDB manual and other documentation resources online at:
+    <http://www.gnu.org/software/gdb/documentation/>.
 
-```sh
-git clone https://github.com/SpinalHDL/SpinalTemplateSbt.git
+For help, type "help".
+Type "apropos word" to search for commands related to "word"...
+Reading symbols from software/helloworld/build/helloworld.elf...
+(gdb)
 ```
 
-Open a terminal in the root of it and run "sbt run". At the first execution, the process could take some seconds
-
-```sh
-cd SpinalTemplateSbt
-
-//If you want to generate the Verilog of your design
-sbt "runMain mylib.MyTopLevelVerilog"
-
-//If you want to generate the VHDL of your design
-sbt "runMain mylib.MyTopLevelVhdl"
-
-//If you want to run the scala written testbench
-sbt "runMain mylib.MyTopLevelSim"
+Now we need to connect our gdb to the target:
+```
+(gdb) target remote localhost:3333
+Remote debugging using localhost:3333
+_start ()
+    at /home/dlobato/workspace-roboclub/neuralFPGA/software/tote/riscv/start.S:7
+7	  la gp, __global_pointer$
+(gdb) monitor reset halt
+JTAG tap: fpga_spinal.bridge tap/device found: 0x10001fff (mfg: 0x7ff (<invalid>), part: 0x0001, ver: 0x1)
+(gdb) load
+Loading section .text, size 0x22f0 lma 0x80000000
+Loading section .sdata2._global_impure_ptr, size 0x4 lma 0x800022f0
+Loading section .sdata, size 0x10 lma 0x80002300
+Loading section .data, size 0x60 lma 0x80002310
+Start address 0x80000000, load size 9060
+Transfer rate: 1474 KB/sec, 2265 bytes/write.
+(gdb) continue
+Continuing.
 ```
 
-The top level spinal code is defined into src\main\scala\mylib
+On the simulator terminal (the one running obj_dir/VTote_tb --jtag-enabled) we should see the message "9611126: Hello World!" (the timestamp might be different). You can stop the program execution on the gdb terminal with Ctrl + C.
 
-## Basics, with Intellij IDEA and its scala plugin
-
-You need to install :
-
-- Java JDK 8
-- SBT
-- Intellij IDEA (the free Community Edition is good enough)
-- Intellij IDEA Scala plugin (when you run Intellij IDEA the first time, he will ask you about it)
-
-And do the following :
-
-- Clone or download this repository.
-- In Intellij IDEA, "import project" with the root of this repository, Import project from external model SBT
-- In addition maybe you need to specify some path like JDK to Intellij
-- In the project (Intellij project GUI), go in src/main/scala/mylib/MyTopLevel.scala, right click on MyTopLevelVerilog, "Run MyTopLevelVerilog"
-
-Normally, this must generate an MyTopLevel.v output files.
-
-## Basics, with Eclipse and its scala plugin
-
-You need to install :
-
-- Java JDK
-- Scala
-- SBT
-- Eclipse (tested with Mars.2 - 4.5.2)
-- [scala plugin](http://scala-ide.org/) (tested with 4.4.1)
-
-And do the following :
-
-- Clone or download this repository.
-- Run ```sbt eclipse``` in the ```SpinalTemplateSbt``` directory.
-- Import the eclipse project from eclipse.
-- In the project (eclipse project GUI), right click on src/main/scala/mylib/MyTopLevel.scala, right click on MyTopLevelVerilog, and select run it
-
-Normally, this must generate output file ```MyTopLevel.v```.
-
+Instead of continue we can set a breakpoint and debbug our code, print variable data, see registers, ...
