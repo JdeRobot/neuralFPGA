@@ -10,3 +10,6 @@
 [submodule "libs/ELFIO"]
 	path = libs/ELFIO
 	url = https://github.com/serge1/ELFIO.git
+[submodule "libs/tensorflow"]
+	path = libs/tensorflow
+	url = https://github.com/tensorflow/tensorflow.git

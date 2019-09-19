@@ -8,20 +8,16 @@ BUILDDIR := $(ROOTDIR)/build
 OBJDIR := $(BUILDDIR)/obj
 BINDIR := $(BUILDDIR)
 
-TENSORFLOW_PATH ?= $(HOME)/src/tensorflow
+TENSORFLOW_PATH ?= $(realpath ../../libs/tensorflow)
 
 SRCS := $(TENSORFLOW_PATH)/tensorflow/lite/experimental/micro/micro_mutable_op_resolver.cc \
-		$(TENSORFLOW_PATH)/tensorflow/lite/experimental/micro/simple_tensor_allocator.cc \
+		$(TENSORFLOW_PATH)/tensorflow/lite/experimental/micro/memory_helpers.cc \
+		$(TENSORFLOW_PATH)/tensorflow/lite/experimental/micro/simple_memory_allocator.cc \
+		$(TENSORFLOW_PATH)/tensorflow/lite/experimental/micro/memory_planner/greedy_memory_planner.cc \
 		$(TENSORFLOW_PATH)/tensorflow/lite/experimental/micro/micro_allocator.cc \
 		$(TENSORFLOW_PATH)/tensorflow/lite/experimental/micro/micro_error_reporter.cc \
-		$(TARGET_DIR)/tensorflow/lite/experimental/micro/debug_log.cc \
 		$(TENSORFLOW_PATH)/tensorflow/lite/experimental/micro/debug_log_numbers.cc \
 		$(TENSORFLOW_PATH)/tensorflow/lite/experimental/micro/micro_interpreter.cc \
-		$(TARGET_DIR)/tensorflow/lite/experimental/micro/kernels/depthwise_conv.cc \
-		$(TARGET_DIR)/tensorflow/lite/experimental/micro/kernels/fully_connected.cc \
-		$(TARGET_DIR)/tensorflow/lite/experimental/micro/kernels/pooling.cc \
-		$(TARGET_DIR)/tensorflow/lite/experimental/micro/kernels/conv.cc \
-		$(TARGET_DIR)/tensorflow/lite/experimental/micro/kernels/softmax.cc \
 		$(TENSORFLOW_PATH)/tensorflow/lite/c/c_api_internal.c \
 		$(TENSORFLOW_PATH)/tensorflow/lite/core/api/error_reporter.cc \
 		$(TENSORFLOW_PATH)/tensorflow/lite/core/api/flatbuffer_conversions.cc \
@@ -29,6 +25,12 @@ SRCS := $(TENSORFLOW_PATH)/tensorflow/lite/experimental/micro/micro_mutable_op_r
 		$(TENSORFLOW_PATH)/tensorflow/lite/core/api/tensor_utils.cc \
 		$(TENSORFLOW_PATH)/tensorflow/lite/kernels/kernel_util.cc \
 		$(TENSORFLOW_PATH)/tensorflow/lite/kernels/internal/quantization_util.cc  \
+		$(TARGET_DIR)/tensorflow/lite/experimental/micro/debug_log.cc \
+		$(TARGET_DIR)/tensorflow/lite/experimental/micro/kernels/depthwise_conv.cc \
+		$(TARGET_DIR)/tensorflow/lite/experimental/micro/kernels/fully_connected.cc \
+		$(TARGET_DIR)/tensorflow/lite/experimental/micro/kernels/pooling.cc \
+		$(TARGET_DIR)/tensorflow/lite/experimental/micro/kernels/conv.cc \
+		$(TARGET_DIR)/tensorflow/lite/experimental/micro/kernels/softmax.cc \
 		src/model_data.S \
 		src/main.cpp
 

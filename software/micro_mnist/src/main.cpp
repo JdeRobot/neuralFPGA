@@ -1,4 +1,5 @@
 #include <hal.h>
+#include <ctime>
 #include <cstdio>
 #include <cinttypes>
 #include "tensorflow/lite/experimental/micro/micro_mutable_op_resolver.h"
@@ -6,8 +7,6 @@
 #include "tensorflow/lite/experimental/micro/micro_interpreter.h"
 #include "tensorflow/lite/kernels/kernel_util.h"
 #include "tensorflow/lite/version.h"
-
-#define assume(cond) do { if (!(cond)) __builtin_unreachable(); } while (0)
 
 extern char model_data[];
 extern unsigned model_data_size;
@@ -88,9 +87,6 @@ int main()
 
   //uint8_t input_data[28*28];
 
-  uint64_t avg_iteration_cycles = 0;
-  uint8_t  avg_iteration_cycles_nsamples = 0;
-
   while(1)
   {
     //set input
@@ -99,8 +95,7 @@ int main()
     // Run the model
     uint64_t t0 = TIMER->COUNTER;
     TfLiteStatus invoke_status = interpreter.Invoke();
-    avg_iteration_cycles += (TIMER->COUNTER - t0);
-    avg_iteration_cycles_nsamples++;
+    uint64_t iteration_cycles = (TIMER->COUNTER - t0);
     if (invoke_status != kTfLiteOk)
     {
       error_reporter->Report("Invoke failed\n");
@@ -109,9 +104,6 @@ int main()
 
     // get output
     error_reporter->Report("Iteration done\n");
-    //if (avg_iteration_cycles_nsamples == 1) {
-    error_reporter->Report("Micro MNIST: Avg iteration cycles: %d\n", static_cast<int>(avg_iteration_cycles));// avg_iteration_cycles/256
-    avg_iteration_cycles = 0;
-    //}
+    error_reporter->Report("Micro MNIST: Iteration cycles: %d\n", static_cast<int>(iteration_cycles));
   }
 }
