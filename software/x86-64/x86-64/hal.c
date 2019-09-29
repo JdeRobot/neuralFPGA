@@ -1,4 +1,4 @@
-#include <hal.h>
+#include <hal/hal.h>
 
 GPIO_Reg gpioA;
 Timer_Reg timer;

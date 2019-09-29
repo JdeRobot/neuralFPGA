@@ -9,8 +9,9 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <hal/hal.h>
+
 #include "encoding.h"
-#include "platform_write.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -128,7 +129,14 @@ int _stat(const char* file, struct stat* st)
 
 clock_t _times(struct tms* buf)
 {
-    return stub(EACCES);
+    if (buf) {
+        buf->tms_utime = TIMER->COUNTER;
+        buf->tms_stime = 0;
+        buf->tms_cutime = 0;
+        buf->tms_cstime = 0;
+    }
+
+    return buf->tms_utime;
 }
 
 int _unlink(const char* name)
@@ -150,10 +158,10 @@ ssize_t _write(int fd, const void* ptr, size_t len)
   {
     for (jj = 0; jj < len; jj++)
     {
-        platform_write(fd, *(current + jj));
+        *((volatile uint32_t*) OUTPORT) = *(current + jj);
         if (current[jj] == '\n')
         {
-            platform_write(fd, '\r');
+            *((volatile uint32_t*) OUTPORT) = '\r';
         }
     }
     return len;

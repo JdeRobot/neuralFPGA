@@ -1,4 +1,4 @@
-package neuralfpga.core
+package jderobot.lib.misc
 
 import spinal.core._
 import spinal.lib._

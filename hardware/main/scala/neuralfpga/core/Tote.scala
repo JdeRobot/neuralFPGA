@@ -1,6 +1,8 @@
 package neuralfpga.core
 
+import jderobot.lib.io.PipelinedMemoryGpio
 import jderobot.lib.lattice.ice40.{Bram, Spram}
+import jderobot.lib.misc.MachineTimer
 import spinal.core._
 import spinal.lib._
 import spinal.lib.bus.misc._
@@ -8,6 +10,7 @@ import spinal.lib.bus.simple._
 import spinal.lib.com.jtag.Jtag
 import spinal.lib.io.{Gpio, TriStateArray}
 import vexriscv._
+import vexriscv.ip.InstructionCacheConfig
 import vexriscv.plugin._
 
 case class ToteParameters(clkFrequency : HertzNumber,
@@ -18,8 +21,8 @@ case class ToteParameters(clkFrequency : HertzNumber,
   def toVexRiscvConfig() = {
     //from vexriscv.demo.GenSmallAndProductive
     val config = VexRiscvConfig(
-      withMemoryStage = true,
-      withWriteBackStage = true,
+      //withMemoryStage = true,
+      //withWriteBackStage = true,
       plugins = List(
         new IBusSimplePlugin(
           resetVector = 0x80000000l,
@@ -45,12 +48,12 @@ case class ToteParameters(clkFrequency : HertzNumber,
         new MulDivIterativePlugin(
           genMul = false
         ),
-        new MulSimplePlugin(),
+        new MulPlugin,
         new SrcPlugin(
           separatedAddSub = false,
-          executeInsertion = false
+          executeInsertion = true
         ),
-        new LightShifterPlugin(),
+        new FullBarrelShifterPlugin,
         new HazardSimplePlugin(
           bypassExecute           = true,
           bypassMemory            = true,

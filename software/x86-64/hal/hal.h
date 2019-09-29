@@ -4,10 +4,8 @@
 extern "C" {
 #endif
 
-#include <gpio.h>
-#include <timer.h>
-
-#define CORE_HZ 12000000
+#include "gpio.h"
+#include "timer.h"
 
 extern GPIO_Reg *hal_gpioA (void);
 extern Timer_Reg *hal_timer (void);

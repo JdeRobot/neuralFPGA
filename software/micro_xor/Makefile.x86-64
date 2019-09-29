@@ -37,7 +37,7 @@ SRCS := $(TENSORFLOW_PATH)/tensorflow/lite/experimental/micro/micro_mutable_op_r
 
 OBJS := $(addprefix $(OBJDIR)/, $(patsubst %.S,%.o,$(patsubst %.cpp,%.o,$(patsubst %.cc,%.o,$(patsubst %.c,%.o,$(SRCS))))))
 
-INCLUDES := -I$(TENSORFLOW_PATH) -I../../libs/gemmlowp -I../../libs/flatbuffers/include -I $(TARGET_DIR)/hal
+INCLUDES := -I$(TENSORFLOW_PATH) -I.. -I../../libs/gemmlowp -I../../libs/flatbuffers/include -I $(TARGET_DIR)
 
 DEFS := -DNDEBUG -DTF_LITE_STATIC_MEMORY -DTF_LITE_MCU_DEBUG_LOG \
 	-DTF_LITE_USE_GLOBAL_ROUND -DMODEL_DATA_FILE=\"src/model.tflite\" \

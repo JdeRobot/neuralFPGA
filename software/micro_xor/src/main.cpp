@@ -1,9 +1,10 @@
-#include <hal.h>
 #include <cstdio>
 #include <cinttypes>
+#include <ctime>
 #include "tensorflow/lite/experimental/micro/micro_mutable_op_resolver.h"
 #include "tensorflow/lite/experimental/micro/micro_error_reporter.h"
 #include "tensorflow/lite/experimental/micro/micro_interpreter.h"
+#include "tensorflow/lite/experimental/micro/profiling/noop_profiler.h"
 #include "tensorflow/lite/version.h"
 
 extern char model_data[];
@@ -55,6 +56,10 @@ int main()
   tflite::MicroErrorReporter micro_error_reporter;
   tflite::ErrorReporter *error_reporter = &micro_error_reporter;
 
+  // Set up profiling
+  tflite::profiling::NoopProfiler noop_profiler;
+  tflite::Profiler *profiler = &noop_profiler;
+
   const tflite::Model *model = tflite::GetModel((const void *)model_data);
   if (model->version() != TFLITE_SCHEMA_VERSION)
   {
@@ -75,7 +80,7 @@ int main()
                       /* max_version */ 2);
 
   // Build an interpreter to run the model with.
-  tflite::MicroInterpreter interpreter(model, resolver, tensor_arena, tensor_arena_size, error_reporter);
+  tflite::MicroInterpreter interpreter(model, resolver, tensor_arena, tensor_arena_size, error_reporter, profiler);
   interpreter.AllocateTensors();
 
   // Get information about the memory area to use for the model's input.
@@ -106,9 +111,9 @@ int main()
     model_input->data.uint8[1] = test_data[i][1];
 
     // Run the model
-    uint64_t t0 = TIMER->COUNTER;
+    clock_t t0 = clock();
     TfLiteStatus invoke_status = interpreter.Invoke();
-    avg_iteration_cycles += (TIMER->COUNTER - t0);
+    avg_iteration_cycles += (clock() - t0);
     if (invoke_status != kTfLiteOk)
     {
       error_reporter->Report("Invoke failed\n");

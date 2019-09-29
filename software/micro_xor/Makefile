@@ -35,7 +35,7 @@ OBJS := $(addprefix $(OBJDIR)/, $(patsubst %.S,%.o,$(patsubst %.cpp,%.o,$(patsub
 
 include $(TARGET_DIR)/target.mk
 
-INCLUDES += -I$(TENSORFLOW_PATH) -I../../libs/gemmlowp -I../../libs/flatbuffers/include
+INCLUDES += -I$(TENSORFLOW_PATH) -I.. -I../../libs/gemmlowp -I../../libs/flatbuffers/include
 
 DEFS := -DNDEBUG -DTF_LITE_STATIC_MEMORY -DTF_LITE_MCU_DEBUG_LOG \
 	-DTF_LITE_USE_GLOBAL_ROUND -DMODEL_DATA_FILE=\"src/model.tflite\" \

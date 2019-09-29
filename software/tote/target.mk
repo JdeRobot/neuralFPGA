@@ -14,7 +14,7 @@ ifeq ($(TARGET), tote)
     -mabi=ilp32 \
     -mcmodel=medany
 
-  INCLUDES := -I $(TARGET_DIR)/hal
+  INCLUDES := -I $(TARGET_DIR)
   COMMON_CFLAGS := $(PLATFORM_FLAGS) -ffunction-sections -fdata-sections -fstack-usage -Wall
   CXXFLAGS += $(COMMON_CFLAGS) -fno-exceptions -fno-rtti -fno-unwind-tables -fcheck-new
   CCFLAGS += $(COMMON_CFLAGS)

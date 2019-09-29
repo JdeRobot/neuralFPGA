@@ -1,5 +1,4 @@
-package neuralfpga.core
-
+package jderobot.lib.io
 
 import spinal.lib.bus.simple.{PipelinedMemoryBus, PipelinedMemoryBusConfig, PipelinedMemoryBusSlaveFactory}
 import spinal.lib.io.Gpio
