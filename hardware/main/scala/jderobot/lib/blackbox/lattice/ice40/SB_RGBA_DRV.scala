@@ -20,10 +20,10 @@ import spinal.core._
 //“0b011111” = 20 mA for Full Mode; 10 mA for Half Mode
 //“0b111111” = 24 mA for Full Mode; 12 mA for Half Mode
 
-case class SB_RGBA_DRV_Config(currentMode: String = "0b0",
-                              rgb0Current: String = "0b000000",
-                              rgb1Current: String = "0b000000",
-                              rgb2Current: String = "0b000000")
+case class SB_RGBA_DRV_Config(currentMode: String = "0b1",
+                              rgb0Current: String = "0b000001",
+                              rgb1Current: String = "0b000001",
+                              rgb2Current: String = "0b000001")
 
 case class SB_RGBA_DRV(config: SB_RGBA_DRV_Config) extends BlackBox {
   val generic = new Generic {

@@ -1,16 +1,23 @@
 # 12 MHz clock
-set_io io_clk  35
+set_io ICE_CLK  35
+# JTAG
+set_io IOB_29B 19
+set_io IOB_31B 18
+set_io IOB_20A 11
+set_io IOB_18A 10
 
-# RS232
-set_io io_serialTx  6
+# GPIO
+set_io IOT_37A 23
+set_io IOT_36B 25
+set_io IOT_44B 34
+set_io IOT_49A 43
+
+set_io IOB_22A 12
+set_io IOB_23B 21
+set_io IOB_24A 13
+set_io IOB_25B 20
 
 # RGB LED Driver
-set_io io_leds_b  39
-set_io io_leds_g  40
-set_io io_leds_r  41
-
-# SPI Flash
-set_io io_flashSpi_ss    16
-set_io io_flashSpi_sclk  15
-set_io io_flashSpi_mosi  14
-set_io io_flashSpi_miso  17
+set_io LED_BLUE   39
+set_io LED_GREEN  40
+set_io LED_RED    41

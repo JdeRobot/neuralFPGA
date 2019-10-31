@@ -3,3 +3,4 @@
 *.blif
 *.rpt
 *.v
+*.json

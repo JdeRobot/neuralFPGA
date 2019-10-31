@@ -1,16 +1,17 @@
 package neuralfpga.core
 
+import jderobot.lib.accelerator._
+import jderobot.lib.blackbox.lattice.ice40._
 import jderobot.lib.io.PipelinedMemoryGpio
-import jderobot.lib.lattice.ice40.{Bram, Spram}
+import jderobot.lib.lattice.ice40._
 import jderobot.lib.misc.MachineTimer
 import spinal.core._
 import spinal.lib._
 import spinal.lib.bus.misc._
 import spinal.lib.bus.simple._
 import spinal.lib.com.jtag.Jtag
-import spinal.lib.io.{Gpio, TriStateArray}
+import spinal.lib.io.{Gpio, InOutWrapper, TriState, TriStateArray}
 import vexriscv._
-import vexriscv.ip.InstructionCacheConfig
 import vexriscv.plugin._
 
 case class ToteParameters(clkFrequency : HertzNumber,
@@ -45,10 +46,7 @@ case class ToteParameters(clkFrequency : HertzNumber,
           zeroBoot = false
         ),
         new IntAluPlugin,
-        new MulDivIterativePlugin(
-          genMul = false
-        ),
-        new MulPlugin,
+        new MulDivIterativePlugin(),
         new SrcPlugin(
           separatedAddSub = false,
           executeInsertion = true
@@ -162,6 +160,7 @@ case class Tote(p: ToteParameters) extends Component {
     gpioCtrl.io.gpio <> io.gpioA
 
     val machineTimer = MachineTimer()
+    val accelerator = PipelinedMemoryAccelerator8x16Ctlr(Accelerator8x16Config())
 
     //Map the different slave/peripherals into the interconnect
     interconnect.addSlaves(
@@ -169,6 +168,7 @@ case class Tote(p: ToteParameters) extends Component {
       dRam.io.bus          -> SizeMapping(0x90000000l, 64 KiB),
       gpioCtrl.io.bus     -> SizeMapping(0xA0000000l,  4 KiB),
       machineTimer.io.bus -> SizeMapping(0xA0001000l,  4 KiB),
+      accelerator.io.bus  -> SizeMapping(0xB0000000l,  4 KiB),
       mainBus             -> DefaultMapping
     )
 
@@ -176,7 +176,7 @@ case class Tote(p: ToteParameters) extends Component {
     interconnect.addMasters(
       iBus   -> List(iRam.io.bus, mainBus),
       dBus   -> List(dRam.io.bus, mainBus),
-      mainBus-> List(iRam.io.bus, dRam.io.bus, gpioCtrl.io.bus, machineTimer.io.bus)
+      mainBus-> List(iRam.io.bus, dRam.io.bus)//, gpioCtrl.io.bus, machineTimer.io.bus, accelerator.io.bus)
     )
 
     //Add pipelining to busses connections to get a better maximal frequency
@@ -216,36 +216,78 @@ case class Tote(p: ToteParameters) extends Component {
 }
 
 //Up5kEvn board specific toplevel.
-//case class ToteUp5kEvn(p : ToteParameters) extends Component{
-//  val io = new Bundle {
-//    val clk  = in  Bool()
-//    val leds = new Bundle {
-//      val r,g,b = out Bool()
-//    }
-//  }
-//
-//  val clkBuffer = SB_GB()
-//  clkBuffer.USER_SIGNAL_TO_GLOBAL_BUFFER <> io.clk
-//
-//  val soc = Tote(p)
-//
-//  soc.io.clk      <> clkBuffer.GLOBAL_BUFFER_OUTPUT
-//  soc.io.reset    <> False
-//
-//
-//  val ledDriver = SB_RGBA_DRV(SB_RGBA_DRV_Config(
-//    currentMode = "0b1", rgb0Current = "0b000001", rgb1Current = "0b000001",rgb2Current = "0b000001"
-//  ))
-//  ledDriver.CURREN   := True
-//  ledDriver.RGBLEDEN := True
-//  ledDriver.RGB0PWM  := soc.io.gpioA(0)
-//  ledDriver.RGB1PWM  := soc.io.leds(1)
-//  ledDriver.RGB2PWM  := soc.io.leds(2)
-//
-//  ledDriver.RGB0 <> io.leds.b
-//  ledDriver.RGB1 <> io.leds.g
-//  ledDriver.RGB2 <> io.leds.r
-//}
+case class ToteUp5kEvn(p : ToteParameters) extends Component{
+  val io = new Bundle {
+    val ICE_CLK  = in  Bool()
+
+    //Gpio
+    val IOT_37A = inout(Analog(Bool))
+    val IOT_36B = inout(Analog(Bool))
+    val IOT_44B = inout(Analog(Bool))
+    val IOT_49A = inout(Analog(Bool))
+    val IOB_22A = inout(Analog(Bool))
+    val IOB_23B = inout(Analog(Bool))
+    val IOB_24A = inout(Analog(Bool))
+    val IOB_25B = inout(Analog(Bool))
+
+    //JTAG
+    val IOB_29B = in  Bool()
+    val IOB_31B = in  Bool()
+    val IOB_20A = out Bool()
+    val IOB_18A = in  Bool()
+
+    val LED_BLUE  = out Bool()
+    val LED_GREEN = out Bool()
+    val LED_RED   = out Bool()
+  }
+  noIoPrefix()
+
+  val clkBuffer = SB_GB()
+  clkBuffer.USER_SIGNAL_TO_GLOBAL_BUFFER <> io.ICE_CLK
+
+  val soc = Tote(p)
+
+  soc.io.clk      <> clkBuffer.GLOBAL_BUFFER_OUTPUT
+  soc.io.reset    <> False
+
+  def ioSbComb(io : Bool, design : TriState[Bool]): Unit ={
+    val bb = SB_IO("101001").setCompositeName(io, "SB")
+    bb.PACKAGE_PIN <> io
+    bb.D_IN_0 <> design.read
+    bb.D_OUT_0 <> design.write
+    bb.OUTPUT_ENABLE <> design.writeEnable
+  }
+
+  ioSbComb(io.IOT_37A, soc.io.gpioA(0))
+  ioSbComb(io.IOT_36B, soc.io.gpioA(1))
+  ioSbComb(io.IOT_44B, soc.io.gpioA(2))
+  ioSbComb(io.IOT_49A, soc.io.gpioA(3))
+  ioSbComb(io.IOB_22A, soc.io.gpioA(4))
+  ioSbComb(io.IOB_23B, soc.io.gpioA(5))
+  ioSbComb(io.IOB_24A, soc.io.gpioA(6))
+  ioSbComb(io.IOB_25B, soc.io.gpioA(7))
+  //  soc.io.gpioA.read := io.IOT_49A ## io.IOT_44B ## io.IOT_36B ## io.IOT_37A ## B"0000"
+
+  if(p.withJtag) {
+    soc.io.jtag.tms <> io.IOB_29B
+    soc.io.jtag.tdi <> io.IOB_31B
+    soc.io.jtag.tdo <> io.IOB_20A
+    soc.io.jtag.tck <> io.IOB_18A
+  } else {
+    io.IOB_20A := False
+  }
+
+  val ledDriver = SB_RGBA_DRV(SB_RGBA_DRV_Config())
+  ledDriver.CURREN   := True
+  ledDriver.RGBLEDEN := True
+  ledDriver.RGB0PWM  := soc.io.gpioA.write(0)
+  ledDriver.RGB1PWM  := soc.io.gpioA.write(1)
+  ledDriver.RGB2PWM  := soc.io.gpioA.write(2)
+
+  ledDriver.RGB0 <> io.LED_BLUE
+  ledDriver.RGB1 <> io.LED_GREEN
+  ledDriver.RGB2 <> io.LED_RED
+}
 
 object Tote {
   def main(args: Array[String]) {
@@ -260,11 +302,11 @@ object Tote {
   }
 }
 
-//object ToteUp5kEvn {
-//  def main(args: Array[String]) {
-//    val outRtlDir = if (!args.isEmpty) args(0) else  "rtl"
-//    SpinalConfig(
-//      targetDirectory = outRtlDir
-//    ).generateVerilog(ToteUp5kEvn(ToteParameters.default))
-//  }
-//}
+object ToteUp5kEvn {
+  def main(args: Array[String]) {
+    val outRtlDir = if (!args.isEmpty) args(0) else  "rtl"
+    SpinalConfig(
+      targetDirectory = outRtlDir
+    ).generateVerilog(InOutWrapper(ToteUp5kEvn(ToteParameters.default)))
+  }
+}
