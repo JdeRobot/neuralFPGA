@@ -176,7 +176,7 @@ case class Tote(p: ToteParameters) extends Component {
     interconnect.addMasters(
       iBus   -> List(iRam.io.bus, mainBus),
       dBus   -> List(dRam.io.bus, mainBus),
-      mainBus-> List(iRam.io.bus, dRam.io.bus)//, gpioCtrl.io.bus, machineTimer.io.bus, accelerator.io.bus)
+      mainBus-> List(iRam.io.bus, dRam.io.bus, gpioCtrl.io.bus, machineTimer.io.bus, accelerator.io.bus)
     )
 
     //Add pipelining to busses connections to get a better maximal frequency
