@@ -19,11 +19,11 @@ case class ToteParameters(clkFrequency : HertzNumber,
                           hardwareBreakpointsCount : Int,
                           withJtag : Boolean){
   //Create a VexRiscv configuration from the SoC configuration
-  def toVexRiscvConfig() = {
-    //from vexriscv.demo.GenSmallAndProductive
+  def toVexRiscvConfigSmallAndProductive() = {
+    //similar to vexriscv.demo.GenSmallAndProductive
     val config = VexRiscvConfig(
-      //withMemoryStage = true,
-      //withWriteBackStage = true,
+      withMemoryStage = true,
+      withWriteBackStage = true,
       plugins = List(
         new IBusSimplePlugin(
           resetVector = 0x80000000l,
@@ -51,15 +51,12 @@ case class ToteParameters(clkFrequency : HertzNumber,
           separatedAddSub = false,
           executeInsertion = true
         ),
-        new FullBarrelShifterPlugin,
+        new LightShifterPlugin(),
         new HazardSimplePlugin(
           bypassExecute           = true,
           bypassMemory            = true,
           bypassWriteBack         = true,
-          bypassWriteBackBuffer   = true,
-          pessimisticUseSrc       = false,
-          pessimisticWriteRegFile = false,
-          pessimisticAddressMatch = false
+          bypassWriteBackBuffer   = true
         ),
         new BranchPlugin(
           earlyBranch = false,
@@ -160,15 +157,15 @@ case class Tote(p: ToteParameters) extends Component {
     gpioCtrl.io.gpio <> io.gpioA
 
     val machineTimer = MachineTimer()
-    val accelerator = PipelinedMemoryAccelerator8x16Ctlr(Accelerator8x16Config())
+    val accelerator = PipelinedMemoryAcceleratorV1Ctlr(AcceleratorV1Config())
 
     //Map the different slave/peripherals into the interconnect
     interconnect.addSlaves(
-      iRam.io.bus          -> SizeMapping(0x80000000l, 64 KiB),
-      dRam.io.bus          -> SizeMapping(0x90000000l, 64 KiB),
-      gpioCtrl.io.bus     -> SizeMapping(0xA0000000l,  4 KiB),
-      machineTimer.io.bus -> SizeMapping(0xA0001000l,  4 KiB),
-      accelerator.io.bus  -> SizeMapping(0xB0000000l,  4 KiB),
+      iRam.io.bus         -> SizeMapping(0x80000000L, 64 KiB),
+      dRam.io.bus         -> SizeMapping(0x90000000L, 64 KiB),
+      gpioCtrl.io.bus     -> SizeMapping(0xA0000000L,  4 KiB),
+      machineTimer.io.bus -> SizeMapping(0xA0001000L,  4 KiB),
+      accelerator.io.bus  -> SizeMapping(0xB0000000L,  4 KiB),
       mainBus             -> DefaultMapping
     )
 
@@ -195,7 +192,7 @@ case class Tote(p: ToteParameters) extends Component {
     }
 
     //Map the CPU into the SoC depending the Plugins used
-    val cpuConfig = p.toVexRiscvConfig()
+    val cpuConfig = p.toVexRiscvConfigSmallAndProductive()
     p.withJtag generate cpuConfig.add(new DebugPlugin(debugClockDomain, p.hardwareBreakpointsCount))
 
     val cpu = new VexRiscv(cpuConfig)

@@ -1,3 +1,4 @@
+/* from https://github.com/YosysHQ/yosys/blob/master/techlibs/ice40/cells_sim.v */
 module SB_SPRAM256KA (
     input [13:0] ADDRESS,
     input [15:0] DATAIN,

@@ -65,7 +65,7 @@ case class Multiplier8x8x2Signed() extends Component {
     val output = out Vec(SInt(16 bits), 2)
   }
 
-  val multiplier = Multiplier8x8x2()
+  val multiplier = Multiplier8x8x2(signed = true)
   multiplier.io.a.assignFromBits(io.a.asBits)
   multiplier.io.b.assignFromBits(io.b.asBits)
   io.output.assignFromBits(multiplier.io.output.asBits)
