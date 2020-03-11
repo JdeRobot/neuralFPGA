@@ -157,7 +157,7 @@ case class Tote(p: ToteParameters) extends Component {
     gpioCtrl.io.gpio <> io.gpioA
 
     val machineTimer = MachineTimer()
-    val accelerator = PipelinedMemoryAcceleratorV1Ctlr(AcceleratorV1Config())
+    val accelerator = PipelinedMemoryAcceleratorV1Ctlr(AcceleratorV1Generics(rowBufferConfig = WindowBuffer3x3Generics(8, 256)))
 
     //Map the different slave/peripherals into the interconnect
     interconnect.addSlaves(

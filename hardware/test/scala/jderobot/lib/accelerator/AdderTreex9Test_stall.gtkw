@@ -1,0 +1,53 @@
+[*]
+[*] GTKWave Analyzer v3.3.86 (w)1999-2017 BSI
+[*] Fri Feb 28 22:58:20 2020
+[*]
+[dumpfile] "/home/dlobato/workspace-roboclub/neuralFPGA/simWorkspace/AdderTreex9/test.vcd"
+[dumpfile_mtime] "Fri Feb 28 22:55:43 2020"
+[dumpfile_size] 13283
+[savefile] "/home/dlobato/workspace-roboclub/neuralFPGA/hardware/test/scala/jderobot/lib/accelerator/AdderTreex9Test_stall.gtkw"
+[timestart] 0
+[size] 1920 1056
+[pos] -1 -1
+*-6.105134 56 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] TOP.
+[sst_width] 420
+[signals_width] 326
+[sst_expanded] 1
+[sst_vpaned_height] 320
+@28
+TOP.AdderTreex9.clk
+TOP.AdderTreex9.io_cmd_ready
+TOP.AdderTreex9.io_cmd_valid
+@24
+TOP.AdderTreex9.io_cmd_payload_x_0[7:0]
+@28
+TOP.AdderTreex9.io_rsp_ready
+TOP.AdderTreex9.io_rsp_valid
+@25
+TOP.AdderTreex9.io_rsp_payload_acc[31:0]
+@24
+[color] 2
+TOP.AdderTreex9.addState1_output_payload_sums_0[8:0]
+[color] 2
+TOP.AdderTreex9.addState1_output_payload_sums_1[8:0]
+[color] 2
+TOP.AdderTreex9.addState1_output_payload_sums_2[8:0]
+[color] 2
+TOP.AdderTreex9.addState1_output_payload_sums_3[8:0]
+[color] 2
+TOP.AdderTreex9.addState1_output_payload_sums_4[8:0]
+[color] 3
+TOP.AdderTreex9.addState2_output_payload_sums_0[9:0]
+[color] 3
+TOP.AdderTreex9.addState2_output_payload_sums_1[9:0]
+[color] 3
+TOP.AdderTreex9.addState2_output_payload_sums_2[9:0]
+[color] 4
+TOP.AdderTreex9.addState3_output_payload_sums_0[10:0]
+[color] 4
+TOP.AdderTreex9.addState3_output_payload_sums_1[10:0]
+[color] 5
+TOP.AdderTreex9.addState4_output_payload_sums_0[11:0]
+[pattern_trace] 1
+[pattern_trace] 0

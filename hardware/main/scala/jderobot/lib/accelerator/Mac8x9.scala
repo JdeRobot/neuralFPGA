@@ -4,25 +4,25 @@ import jderobot.lib.lattice.ice40._
 import spinal.core._
 import spinal.lib._
 
-case class Mac8x9Config(accumulatorWidth: Int = 32,
-                        useHwMultiplier: Boolean = false)
+case class Mac8x9Generics(accumulatorWidth: Int = 32,
+                          useHwMultiplier: Boolean = false)
 
-case class Mac8x9Cmd(config: Mac8x9Config) extends Bundle {
+case class Mac8x9Cmd(config: Mac8x9Generics) extends Bundle {
   val x = Vec(UInt(8 bits), 9)
   val y = Vec(UInt(8 bits), 9)
   val acc0 = UInt(config.accumulatorWidth bits)
 }
 
-case class Mac8x9Rsp(config: Mac8x9Config) extends Bundle {
+case class Mac8x9Rsp(config: Mac8x9Generics) extends Bundle {
   val acc = UInt(config.accumulatorWidth bits)
 }
 
-case class Mac8x9StageContext(config: Mac8x9Config, sumBits: Int, sumSize: Int) extends Bundle {
+case class Mac8x9StageContext(config: Mac8x9Generics, sumBits: Int, sumSize: Int) extends Bundle {
   val sums = Vec(UInt(sumBits bits), sumSize)
   val acc0 = UInt(config.accumulatorWidth bits)
 }
 
-case class Mac8x9(config: Mac8x9Config) extends Component {
+case class Mac8x9(config: Mac8x9Generics) extends Component {
   val io = new Bundle {
     val cmd = slave Stream(Mac8x9Cmd(config))
     val rsp = master Stream(Mac8x9Rsp(config))
@@ -43,7 +43,7 @@ case class Mac8x9(config: Mac8x9Config) extends Component {
           to.sums(i * 2) := multiplier.io.output(0)
           to.sums(i * 2 + 1) := multiplier.io.output(1)
         }
-        to.sums(8) := from.x(8) * from.x(8)
+        to.sums(8) := from.x(8) * from.y(8)
       } else {
         to.sums := Vec((from.x,from.y).zipped.map(_ * _))
       }
@@ -51,7 +51,7 @@ case class Mac8x9(config: Mac8x9Config) extends Component {
     })
   }
 
-  val adderTree = AdderTreex9(AdderTreex9Config(inputWidth = 16, accumulatorWidth = 32))
+  val adderTree = AdderTreex9(AdderTreex9Generics(inputWidth = 16, accumulatorWidth = 32))
   adderTree.io.cmd.translateFrom(multStage.output.stage())((to, from) => {
     to.x := from.sums
     to.acc0 := from.acc0
@@ -67,6 +67,6 @@ object Mac8x9 {
     val outRtlDir = if (!args.isEmpty) args(0) else  "rtl"
     SpinalConfig(
       targetDirectory = outRtlDir
-    ).generateVerilog(Mac8x9(Mac8x9Config(useHwMultiplier = true)))
+    ).generateVerilog(Mac8x9(Mac8x9Generics(useHwMultiplier = true)))
   }
 }

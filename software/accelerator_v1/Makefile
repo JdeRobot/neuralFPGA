@@ -12,7 +12,7 @@ include $(TARGET_DIR)/target.mk
 CCFLAGS += -g -Os
 CXXFLAGS += -g -Os
 
-SRCS := src/main.c
+SRCS := src/conv2d.c src/main.c
 OBJS := $(addprefix $(OBJDIR)/, $(patsubst %.S,%.o,$(patsubst %.cpp,%.o,$(patsubst %.c,%.o,$(SRCS)))))
 
 all: $(BINDIR)/$(PROJ_NAME).bin $(BINDIR)/$(PROJ_NAME).asm

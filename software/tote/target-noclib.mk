@@ -24,6 +24,6 @@ ifeq ($(TARGET), tote)
   LDFLAGS += -ffreestanding -nostdlib -lgcc
   LDFLAGS += -Wl,--gc-sections,-Bstatic,-T,$(TARGET_DIR)/$(LDSCRIPT),-Map,$(OBJDIR)/$(PROJ_NAME).map,--print-memory-usage
 
-  TARGET_SRCS := $(TARGET_DIR)/riscv/start.S $(TARGET_DIR)/riscv/init.c $(TARGET_DIR)/riscv/exit.c $(TARGET_DIR)/riscv/putchar.S $(TARGET_DIR)/riscv/printf.c $(TARGET_DIR)/riscv/supc++.cpp
+  TARGET_SRCS := $(TARGET_DIR)/riscv/start.S $(TARGET_DIR)/riscv/init.c $(TARGET_DIR)/riscv/exit.c $(TARGET_DIR)/riscv/putchar.S $(TARGET_DIR)/riscv/supc++.cpp
   TARGET_OBJS := $(addprefix $(OBJDIR)/, $(patsubst %.S,%.o,$(patsubst %.c,%.o,$(patsubst %.cpp,%.o,$(TARGET_SRCS)))))
 endif

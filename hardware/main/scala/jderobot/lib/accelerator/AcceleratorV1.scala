@@ -5,24 +5,31 @@ import spinal.lib._
 import spinal.lib.bus.misc.{BusSlaveFactory, BusSlaveFactoryAddressWrapper}
 import spinal.lib.bus.simple.{PipelinedMemoryBus, PipelinedMemoryBusSlaveFactory}
 
-case class AcceleratorV1Config(xFifoDepth: Int = 256, zFifoDepth: Int = 256)
+case class AcceleratorV1Generics(xFifoDepth: Int = 256,
+                                 zFifoDepth: Int = 256,
+                                 rowBufferConfig: WindowBuffer3x3Generics)
 
-case class AcceleratorV1Io(config: AcceleratorV1Config) extends Bundle {
+case class AcceleratorV1ConfigCmd(generics: AcceleratorV1Generics) extends Bundle {
+  val rowBufferFlushCmd = WindowBuffer3x3FlushCmd(generics.rowBufferConfig)
+}
+
+case class AcceleratorV1Io(generics: AcceleratorV1Generics) extends Bundle {
+  val config = slave(Flow(AcceleratorV1ConfigCmd(generics)))
   val x = slave(Stream(Bits(32 bits)))
   //val y = slave(Stream(Bits(128 bits)))
   //val z0 = slave(Stream(Bits(32 bits)))
   val z = master(Stream(Bits(32 bits)))
 
   def driveFrom(bus : BusSlaveFactory, baseAddress : Int = 0) = new Area {
-    require(config.xFifoDepth >= 1)
-    require(config.zFifoDepth >= 1)
+    require(generics.xFifoDepth >= 1)
+    require(generics.zFifoDepth >= 1)
     require(bus.busDataWidth == 32)
 
     val busWithOffset = new BusSlaveFactoryAddressWrapper(bus, baseAddress)
 
     val XLogic = new Area {
-      val streamUnbuffered = busWithOffset.createAndDriveFlow(Bits(32 bits),address =  0x04).toStream //x address 4
-      val (stream, fifoAvailability) = streamUnbuffered.queueWithAvailability(config.xFifoDepth)
+      val streamUnbuffered = busWithOffset.createAndDriveFlow(Bits(32 bits),address =  0x08).toStream //x address 4
+      val (stream, fifoAvailability) = streamUnbuffered.queueWithAvailability(generics.xFifoDepth)
       x << stream
     }
 
@@ -41,37 +48,51 @@ case class AcceleratorV1Io(config: AcceleratorV1Config) extends Bundle {
 //    }
 
     val ZLogic = new Area {
-      val (stream, fifoOccupancy) = z.queueWithOccupancy(config.zFifoDepth)
+      val (stream, fifoOccupancy) = z.queueWithOccupancy(generics.zFifoDepth)
       val wordCount = (widthOf(stream.payload) - 1) / busWithOffset.busDataWidth + 1
 
-      busWithOffset.readMultiWord(stream.payload, address = 0x08) //z address 4+4=8
-      stream.ready := busWithOffset.isReading(0x08 + ((wordCount - 1) * busWithOffset.wordAddressInc))
+      busWithOffset.readMultiWord(stream.payload, address = 0x0c) //z address
+      stream.ready := busWithOffset.isReading(0x0c + ((wordCount - 1) * busWithOffset.wordAddressInc))
     }
 
     val statusLogic = new Area {
       busWithOffset.read(XLogic.fifoAvailability, address = 0x00, 0)
       busWithOffset.read(ZLogic.fifoOccupancy, address = 0x00, 16)
     }
+
+    val configLogic = new Area {
+      val valid = RegNext(busWithOffset.isWriting(address = 0x04)) init(False)
+
+      busWithOffset.driveAndRead(config.rowBufferFlushCmd.rowWidth, address = 0x04, 0) init(0)
+      busWithOffset.driveAndRead(config.rowBufferFlushCmd.initialDelay, address = 0x04, 16) init(0)
+
+      config.valid := valid
+    }
   }
 }
 
-case class AcceleratorV1Ctlr(config: AcceleratorV1Config) extends Component {
-  val io = AcceleratorV1Io(config)
+case class AcceleratorV1Ctlr(generics: AcceleratorV1Generics) extends Component {
+  val io = AcceleratorV1Io(generics)
 
-  val mac8x9 = Mac8x9(Mac8x9Config(useHwMultiplier = true))
+  val ser32to8 = Ser32to8()
+  val windowBuffer3x3 = WindowBuffer3x3(generics.rowBufferConfig)
+  windowBuffer3x3.io.flush << io.config.translateWith(io.config.rowBufferFlushCmd)
 
-  mac8x9.io.cmd.translateFrom(io.x)((to, from) => {
+  val mac8x9 = Mac8x9(Mac8x9Generics(useHwMultiplier = true))
+
+  ser32to8.io.input << io.x
+  windowBuffer3x3.io.input << ser32to8.io.output
+
+  mac8x9.io.cmd.translateFrom(windowBuffer3x3.io.output)((to, from) => {
     to.acc0 := 0
-    to.x := Vec(from.subdivideIn(8 bits).map(_.asUInt) ++ from.subdivideIn(8 bits).map(_.asUInt) :+ U(0, 8 bits))
+    to.x := Vec(from.map(_.asUInt))
     to.y := Vec(U(1, 8 bits), 9)
   })
 
-  io.z.translateFrom(mac8x9.io.rsp)((to, from) => {
-    to := from.acc.asBits
-  })
+  io.z << mac8x9.io.rsp.translateWith(mac8x9.io.rsp.acc.asBits)
 }
 
-case class PipelinedMemoryAcceleratorV1Ctlr(config: AcceleratorV1Config) extends Component{
+case class PipelinedMemoryAcceleratorV1Ctlr(config: AcceleratorV1Generics) extends Component{
   val io = new Bundle{
     val bus =  slave(PipelinedMemoryBus(12,32))
   }
@@ -88,7 +109,7 @@ object UseAcceleratorV1{
       targetDirectory = outRtlDir
     ).generateVerilog({
       new Component{
-        val accelCtlr = AcceleratorV1Ctlr(AcceleratorV1Config())
+        val accelCtlr = AcceleratorV1Ctlr(AcceleratorV1Generics(rowBufferConfig = WindowBuffer3x3Generics(8, 256)))
         val busCtrl = new PipelinedMemoryBusSlaveFactory(slave(PipelinedMemoryBus(12,32)))
         accelCtlr.io.driveFrom(busCtrl, 0)
       }.setDefinitionName("UseAcceleratorV1")

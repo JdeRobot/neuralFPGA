@@ -3,24 +3,24 @@ package jderobot.lib.accelerator
 import spinal.core._
 import spinal.lib._
 
-case class AdderTreex9Config(inputWidth: Int,
-                             accumulatorWidth: Int)
+case class AdderTreex9Generics(inputWidth: Int,
+                               accumulatorWidth: Int)
 
-case class AdderTreex9Cmd(config: AdderTreex9Config) extends Bundle {
+case class AdderTreex9Cmd(config: AdderTreex9Generics) extends Bundle {
   val x = Vec(UInt(config.inputWidth bits), 9)
   val acc0 = UInt(config.accumulatorWidth bits)
 }
 
-case class AdderTreex9Rsp(config: AdderTreex9Config) extends Bundle {
+case class AdderTreex9Rsp(config: AdderTreex9Generics) extends Bundle {
   val acc = UInt(config.accumulatorWidth bits)
 }
 
-case class AdderTreex9StageContext(config: AdderTreex9Config, sumBits: Int, sumSize: Int) extends Bundle {
+case class AdderTreex9StageContext(config: AdderTreex9Generics, sumBits: Int, sumSize: Int) extends Bundle {
   val sums = Vec(UInt(sumBits bits), sumSize)
   val acc0 = UInt(config.accumulatorWidth bits)
 }
 
-case class AdderTreex9(config: AdderTreex9Config) extends Component {
+case class AdderTreex9(config: AdderTreex9Generics) extends Component {
   val io = new Bundle {
     val cmd = slave Stream(AdderTreex9Cmd(config))
     val rsp = master Stream(AdderTreex9Rsp(config))
@@ -77,6 +77,10 @@ case class AdderTreex9(config: AdderTreex9Config) extends Component {
     io.rsp.translateFrom(input)((to, from) => {
       to.acc := from.acc0 + from.sums(0)
     })
+//    io.rsp.valid := input.valid && io.cmd.valid
+//    io.rsp.acc := input.acc0 + input.sums(0)
+//    input.ready := io.rsp.ready
+
   }
 }
 
@@ -85,6 +89,6 @@ object AdderTreex9 {
     val outRtlDir = if (!args.isEmpty) args(0) else  "rtl"
     SpinalConfig(
       targetDirectory = outRtlDir
-    ).generateVerilog(AdderTreex9(AdderTreex9Config(inputWidth = 8, accumulatorWidth = 32)))
+    ).generateVerilog(AdderTreex9(AdderTreex9Generics(inputWidth = 8, accumulatorWidth = 32)))
   }
 }

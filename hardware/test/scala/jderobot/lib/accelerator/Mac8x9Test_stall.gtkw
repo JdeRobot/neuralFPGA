@@ -1,0 +1,47 @@
+[*]
+[*] GTKWave Analyzer v3.3.86 (w)1999-2017 BSI
+[*] Wed Mar  4 20:13:24 2020
+[*]
+[dumpfile] "/home/dlobato/workspace-roboclub/neuralFPGA/simWorkspace/Mac8x9/test.vcd"
+[dumpfile_mtime] "Wed Mar  4 20:09:01 2020"
+[dumpfile_size] 25849
+[savefile] "/home/dlobato/workspace-roboclub/neuralFPGA/hardware/test/scala/jderobot/lib/accelerator/Mac8x9Test_stall.gtkw"
+[timestart] 0
+[size] 1920 1176
+[pos] -1 -1
+*-6.067756 311 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] TOP.
+[sst_width] 420
+[signals_width] 326
+[sst_expanded] 1
+[sst_vpaned_height] 320
+@28
+TOP.Mac8x9.clk
+TOP.Mac8x9.io_cmd_ready
+TOP.Mac8x9.io_cmd_valid
+@24
+TOP.Mac8x9.io_cmd_payload_x_0[7:0]
+TOP.Mac8x9.io_cmd_payload_x_1[7:0]
+TOP.Mac8x9.io_cmd_payload_x_2[7:0]
+TOP.Mac8x9.io_cmd_payload_x_3[7:0]
+TOP.Mac8x9.io_cmd_payload_x_4[7:0]
+TOP.Mac8x9.io_cmd_payload_x_5[7:0]
+TOP.Mac8x9.io_cmd_payload_x_6[7:0]
+TOP.Mac8x9.io_cmd_payload_x_7[7:0]
+TOP.Mac8x9.io_cmd_payload_x_8[7:0]
+TOP.Mac8x9.io_cmd_payload_y_0[7:0]
+TOP.Mac8x9.io_cmd_payload_y_1[7:0]
+TOP.Mac8x9.io_cmd_payload_y_2[7:0]
+TOP.Mac8x9.io_cmd_payload_y_3[7:0]
+TOP.Mac8x9.io_cmd_payload_y_4[7:0]
+TOP.Mac8x9.io_cmd_payload_y_5[7:0]
+TOP.Mac8x9.io_cmd_payload_y_6[7:0]
+TOP.Mac8x9.io_cmd_payload_y_7[7:0]
+TOP.Mac8x9.io_cmd_payload_y_8[7:0]
+@28
+TOP.Mac8x9.io_rsp_ready
+TOP.Mac8x9.io_rsp_valid
+@25
+TOP.Mac8x9.io_rsp_payload_acc[31:0]
+[pattern_trace] 1
+[pattern_trace] 0

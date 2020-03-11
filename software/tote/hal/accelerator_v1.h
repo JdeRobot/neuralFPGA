@@ -1,15 +1,19 @@
-#ifndef ACCELERATOR_V1_H
-#define ACCELERATOR_V1_H
+#pragma once
 
 #include <stdint.h>
 
 #define ACCELERATOR_V1_BASE_ADDR 0xB0000000UL
 
-typedef struct
-{
-  volatile uint32_t STATUS;
-  volatile uint32_t X;
-  volatile uint32_t Z;
-} Accelerator_V1_Reg;
+#define X_FIFO_AVAILABILITY(STATUS) ((uint16_t)((STATUS) & 0xFFFF))
+#define Z_FIFO_OCUPANCY(STATUS) ((uint16_t)(((STATUS) >> 16) & 0xFFFF))
 
-#endif //ACCELERATOR_V1_H
+#define CONFIG_ROW_WIDTH(CONFIG) ((uint16_t)((CONFIG) & 0xFFFF))
+#define CONFIG_INITIAL_DELAY(CONFIG) ((uint16_t)(((CONFIG) >> 16) & 0xFFFF))
+
+struct accelerator_v1_reg
+{
+  volatile uint32_t STATUS; /* 0x00 */
+  volatile uint32_t CONFIG; /* 0x04 */
+  volatile uint32_t X; /* 0x08 */
+  volatile uint32_t Z; /* 0x0C */
+};

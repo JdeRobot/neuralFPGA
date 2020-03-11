@@ -1,5 +1,4 @@
-#ifndef HAL_H
-#define HAL_H
+#pragma once
 
 #include "gpio.h"
 #include "timer.h"
@@ -12,6 +11,4 @@
 #define GPIOA    ((GPIO_Reg*)(GPIOA_BASE_ADDR))
 #define TIMER    ((Timer_Reg*)(TIMER_BASE_ADDR))
 #define OUTPORT  (0xFFFFFFF8)
-#define ACCELERATOR_V1 ((Accelerator_V1_Reg*)(ACCELERATOR_V1_BASE_ADDR))
-
-#endif //HAL_H
+#define ACCELERATOR_V1 ((struct accelerator_v1_reg*)(ACCELERATOR_V1_BASE_ADDR))
