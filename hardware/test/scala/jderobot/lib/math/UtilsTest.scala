@@ -37,7 +37,7 @@ class UtilsTest extends FunSuite {
       }
 
       val reference =
-        Seq("src/test/c/reference/rounding_divide_by_pot_32bit_reference", "1000").!!.split('\n').map(_.split(",")).map(ReferenceSample)
+        Seq("hardware/test/cpp/reference/rounding_divide_by_pot_32bit_reference", "1000").!!.split('\n').map(_.split(",")).map(ReferenceSample)
       var previousX = reference(0).x
       var previousExp = reference(0).exp
       var expectedResult = 0
@@ -68,7 +68,7 @@ class UtilsTest extends FunSuite {
       }
 
       val reference =
-        Seq("src/test/c/reference/saturating_rounding_doubling_high_mul_32bit_reference", "1000").!!.split('\n').map(_.split(",")).map(ReferenceSample)
+        Seq("hardware/test/cpp/reference/saturating_rounding_doubling_high_mul_32bit_reference", "1000").!!.split('\n').map(_.split(",")).map(ReferenceSample)
 
       var previousA = reference(0).a
       var previousB = reference(0).b

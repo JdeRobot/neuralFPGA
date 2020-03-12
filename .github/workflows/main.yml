@@ -1,0 +1,64 @@
+name: CI
+
+# Controls when the action will run. Triggers the workflow on push or pull request 
+# events but only for the master branch
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+    - uses: actions/checkout@v2
+      with:
+        submodules: recursive 
+    - uses: olafurpg/setup-scala@v7
+    - name: Install verilator
+      run: sudo apt install verilator
+    
+    - name: Cache riscv toolchain
+      id: cache-riscv
+      uses: actions/cache@v1
+      with:
+        path: ~/riscv64-unknown-elf-gcc-8.3.0-2019.08.0-x86_64-linux-ubuntu14
+        key: ${{ runner.os }}-riscv64-unknown-elf-gcc-8.3.0-2019.08.0-x86_64-linux-ubuntu14
+    - name: Install riscv gcc
+      if: steps.cache-riscv.outputs.cache-hit != 'true'
+      run: .github/install_riscv_toolchain_ubuntu.sh $HOME riscv64-unknown-elf-gcc-8.3.0-2019.08.0-x86_64-linux-ubuntu14
+    - name: Set up riscv-gcc path
+      run: echo "::add-path::$HOME/riscv64-unknown-elf-gcc-8.3.0-2019.08.0-x86_64-linux-ubuntu14/bin"
+    
+    - name: Cache SBT ivy cache
+      uses: actions/cache@v1
+      with:
+        path: ~/.ivy2/cache
+        key: ${{ runner.os }}-sbt-ivy-cache-${{ hashFiles('**/build.sbt') }}
+    - name: Cache SBT
+      uses: actions/cache@v1
+      with:
+        path: ~/.sbt
+        key: ${{ runner.os }}-sbt-${{ hashFiles('**/build.sbt') }}
+
+    - name: Download tensorflow lite deps
+      run: |
+        cd software/libs/tensorflow && tensorflow/lite/tools/make/download_dependencies.sh
+
+    - name: Build
+      run: make all
+
+    - name: Tests
+      run: make test
+
+    - uses: actions/upload-artifact@v1
+      with:
+        name: rtl
+        path: rtl
