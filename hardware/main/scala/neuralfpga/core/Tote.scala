@@ -16,8 +16,10 @@ import vexriscv.plugin._
 
 case class ToteParameters(clkFrequency : HertzNumber,
                           gpioA : Gpio.Parameter,
-                          hardwareBreakpointsCount : Int,
-                          withJtag : Boolean){
+                          iRamOnChipRamSize: BigInt = 128 KiB,
+                          dRamOnChipRamSize: BigInt = 128 KiB,
+                          hardwareBreakpointsCount : Int = 0,
+                          withJtag : Boolean = false){
   //Create a VexRiscv configuration from the SoC configuration
   def toVexRiscvConfigSmallAndProductive() = {
     //similar to vexriscv.demo.GenSmallAndProductive
@@ -37,7 +39,7 @@ case class ToteParameters(clkFrequency : HertzNumber,
           catchAddressMisaligned = false,
           catchAccessFault = false
         ),
-        new CsrPlugin(CsrPluginConfig.smallest),
+        new CsrPlugin(CsrPluginConfig.all),
         new DecoderSimplePlugin(
           catchIllegalInstruction = false
         ),
@@ -70,8 +72,13 @@ case class ToteParameters(clkFrequency : HertzNumber,
 }
 
 object ToteParameters {
-  def default = up5kDefault
-  def up5kDefault = ToteParameters(
+  def default = ToteParameters(
+    clkFrequency = 12 MHz,
+    gpioA = Gpio.Parameter(
+      width = 8
+    )
+  )
+  def jtag = ToteParameters(
     clkFrequency = 12 MHz,
     gpioA = Gpio.Parameter(
       width = 8
@@ -150,21 +157,21 @@ case class Tote(p: ToteParameters) extends Component {
 
 
     //Define slave/peripheral components
-    val iRam = Spram()
-    val dRam = Spram()
+    val iRam = Bram(onChipRamSize = p.iRamOnChipRamSize)
+    val dRam = Bram(onChipRamSize = p.dRamOnChipRamSize)
 
     val gpioCtrl = PipelinedMemoryGpio(p.gpioA)
     gpioCtrl.io.gpio <> io.gpioA
 
-    val machineTimer = MachineTimer()
+    //val machineTimer = MachineTimer()
     val accelerator = PipelinedMemoryAcceleratorV1Ctlr(AcceleratorV1Generics(rowBufferConfig = WindowBuffer3x3Generics(8, 256)))
 
     //Map the different slave/peripherals into the interconnect
     interconnect.addSlaves(
-      iRam.io.bus         -> SizeMapping(0x80000000L, 64 KiB),
-      dRam.io.bus         -> SizeMapping(0x90000000L, 64 KiB),
+      iRam.io.bus         -> SizeMapping(0x80000000L, p.iRamOnChipRamSize),
+      dRam.io.bus         -> SizeMapping(0x90000000L, p.dRamOnChipRamSize),
       gpioCtrl.io.bus     -> SizeMapping(0xA0000000L,  4 KiB),
-      machineTimer.io.bus -> SizeMapping(0xA0001000L,  4 KiB),
+      //machineTimer.io.bus -> SizeMapping(0xA0001000L,  4 KiB),
       accelerator.io.bus  -> SizeMapping(0xB0000000L,  4 KiB),
       mainBus             -> DefaultMapping
     )
@@ -173,7 +180,8 @@ case class Tote(p: ToteParameters) extends Component {
     interconnect.addMasters(
       iBus   -> List(iRam.io.bus, mainBus),
       dBus   -> List(dRam.io.bus, mainBus),
-      mainBus-> List(iRam.io.bus, dRam.io.bus, gpioCtrl.io.bus, machineTimer.io.bus, accelerator.io.bus)
+      //mainBus-> List(iRam.io.bus, dRam.io.bus, gpioCtrl.io.bus, machineTimer.io.bus, accelerator.io.bus)
+      mainBus-> List(iRam.io.bus, dRam.io.bus, gpioCtrl.io.bus, accelerator.io.bus)
     )
 
     //Add pipelining to busses connections to get a better maximal frequency
@@ -201,7 +209,7 @@ case class Tote(p: ToteParameters) extends Component {
       case plugin : DBusSimplePlugin => dBus << plugin.dBus.toPipelinedMemoryBus()
       case plugin : CsrPlugin => {
         plugin.externalInterrupt := False //Not used
-        plugin.timerInterrupt := machineTimer.io.mTimeInterrupt
+        plugin.timerInterrupt := False //machineTimer.io.mTimeInterrupt
       }
       case plugin : DebugPlugin => plugin.debugClockDomain{
         resetCtrl.systemResetSet setWhen RegNext(plugin.io.resetOut)
@@ -299,11 +307,24 @@ object Tote {
   }
 }
 
+object ToteJtag {
+  def main(args: Array[String]) {
+    val outRtlDir = if (!args.isEmpty) args(0) else  "rtl"
+    SpinalConfig(
+      targetDirectory = outRtlDir
+    ).generateVerilog({
+      val toplevel = Tote(ToteParameters.jtag)
+      toplevel.system.dBus.addAttribute(Verilator.public)
+      toplevel
+    })
+  }
+}
+
 object ToteUp5kEvn {
   def main(args: Array[String]) {
     val outRtlDir = if (!args.isEmpty) args(0) else  "rtl"
     SpinalConfig(
       targetDirectory = outRtlDir
-    ).generateVerilog(InOutWrapper(ToteUp5kEvn(ToteParameters.default)))
+    ).generateVerilog(InOutWrapper(ToteUp5kEvn(ToteParameters.jtag)))
   }
 }

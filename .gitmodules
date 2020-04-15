@@ -1,15 +1,9 @@
 [submodule "src/main/resources/rtl/Booth_Multipliers"]
 	path = hardware/main/resources/rtl/Booth_Multipliers
 	url = https://github.com/dlobato/Booth_Multipliers
-[submodule "src/test/c/libs/gemmlowp"]
-	path = libs/gemmlowp
-	url = https://github.com/google/gemmlowp.git
-[submodule "libs/flatbuffers"]
-	path = libs/flatbuffers
-	url = https://github.com/google/flatbuffers.git
 [submodule "libs/ELFIO"]
-	path = libs/ELFIO
+	path = totesim/libs/ELFIO
 	url = https://github.com/serge1/ELFIO.git
 [submodule "libs/tensorflow"]
-	path = libs/tensorflow
+	path = software/libs/tensorflow
 	url = https://github.com/dlobato/tensorflow.git

@@ -37,6 +37,10 @@ bin/
 *.yaml
 
 build.sbt.local
-simWorkspace/
-tmp/
+simWorkspace
+tmp
+rtl
+attic
+
+totesim/obj_dir
 
