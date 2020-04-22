@@ -2,13 +2,12 @@ PROJ_NAME := micro_mnist
 
 DEBUG := yes
 STANDALONE := $(realpath ..)
-TOTE_PATH := $(realpath ../../tote)
 TENSORFLOW_PATH := $(realpath ../../libs/tensorflow)
 FLATBUFFERS_PATH := $(TENSORFLOW_PATH)/tensorflow/lite/tools/make/downloads/flatbuffers
 GEMMLOWP_PATH := $(TENSORFLOW_PATH)/tensorflow/lite/tools/make/downloads/gemmlowp
 ABSL_PATH := $(TENSORFLOW_PATH)/tensorflow/lite/tools/make/downloads/absl
 
-INCLUDES += -I$(TOTE_PATH) -I$(TENSORFLOW_PATH) -I$(GEMMLOWP_PATH) -I$(FLATBUFFERS_PATH)/include -I$(ABSL_PATH)
+INCLUDES += -I$(TENSORFLOW_PATH) -I$(GEMMLOWP_PATH) -I$(FLATBUFFERS_PATH)/include -I$(ABSL_PATH)
 
 DEFS := -DNDEBUG \
 		-DTF_LITE_STATIC_MEMORY \
