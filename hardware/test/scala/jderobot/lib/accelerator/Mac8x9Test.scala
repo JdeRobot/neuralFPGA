@@ -6,7 +6,7 @@ import spinal.core.sim._
 class Mac8x9Test extends FunSuite {
   val simConfig = SimConfig.withWave
 
-  test("mac ones") {
+  test("mac 9 times (1,1)") {
     simConfig.doSim(Mac8x9(Mac8x9Generics())){ dut =>
       dut.clockDomain.forkStimulus(period = 10)
 
@@ -25,6 +25,72 @@ class Mac8x9Test extends FunSuite {
 
       dut.clockDomain.waitRisingEdgeWhere(dut.io.rsp.valid.toBoolean)
       assert(dut.io.rsp.acc.toLong == 9)
+    }
+  }
+
+  test("mac 9 times (1,-1)") {
+    simConfig.doSim(Mac8x9(Mac8x9Generics())){ dut =>
+      dut.clockDomain.forkStimulus(period = 10)
+
+      dut.io.cmd.valid #= false
+      dut.io.rsp.ready #= false
+      dut.clockDomain.waitSampling()
+
+      dut.io.cmd.valid #= true
+      dut.io.cmd.x.foreach(_ #= 1)
+      dut.io.cmd.y.foreach(_ #= -1)
+      dut.io.cmd.acc0 #= 0
+
+      dut.clockDomain.waitSampling()
+      dut.io.rsp.ready #= true
+      dut.io.cmd.valid #= false
+
+      dut.clockDomain.waitRisingEdgeWhere(dut.io.rsp.valid.toBoolean)
+      assert(dut.io.rsp.acc.toLong == -9)
+    }
+  }
+
+  test("mac 9 times (127,-1)") {
+    simConfig.doSim(Mac8x9(Mac8x9Generics())){ dut =>
+      dut.clockDomain.forkStimulus(period = 10)
+
+      dut.io.cmd.valid #= false
+      dut.io.rsp.ready #= false
+      dut.clockDomain.waitSampling()
+
+      dut.io.cmd.valid #= true
+      dut.io.cmd.x.foreach(_ #= 127)
+      dut.io.cmd.y.foreach(_ #= -1)
+      dut.io.cmd.acc0 #= 0
+
+      dut.clockDomain.waitSampling()
+      dut.io.rsp.ready #= true
+      dut.io.cmd.valid #= false
+
+      dut.clockDomain.waitRisingEdgeWhere(dut.io.rsp.valid.toBoolean)
+      assert(dut.io.rsp.acc.toLong == -9*127)
+    }
+  }
+
+  test("mac 9 times (-128,-1)") {
+    simConfig.doSim(Mac8x9(Mac8x9Generics())){ dut =>
+      dut.clockDomain.forkStimulus(period = 10)
+
+      dut.io.cmd.valid #= false
+      dut.io.rsp.ready #= false
+      dut.clockDomain.waitSampling()
+
+      dut.io.cmd.valid #= true
+      dut.io.cmd.x.foreach(_ #= -128)
+      dut.io.cmd.y.foreach(_ #= -1)
+      dut.io.cmd.acc0 #= 0
+
+      dut.clockDomain.waitSampling()
+      dut.io.rsp.ready #= true
+      dut.io.cmd.valid #= false
+
+      dut.clockDomain.waitRisingEdgeWhere(dut.io.rsp.valid.toBoolean)
+      assert(dut.io.rsp.acc.toLong == 9*128)
     }
   }
 

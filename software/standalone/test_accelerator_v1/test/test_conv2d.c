@@ -2,18 +2,20 @@
 #include <inttypes.h>
 #include "conv2d.h"
 
+#define OUTPUT_CHANNELS 2
+
 #define FILTER_HEIGHT 3
 #define FILTER_WIDTH 3
-uint8_t filter_data[FILTER_HEIGHT*FILTER_WIDTH] = {
-    1, 1, 1,
-    1, 1, 1,
-    1, 1, 1,
+#define FILTER_DEPTH OUTPUT_CHANNELS
+int8_t filter_data[FILTER_DEPTH*FILTER_HEIGHT*FILTER_WIDTH] = {
+    1, 1, 1, 1, 1, 1, 1, 1, 1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1,
 };
 
 #define INPUT_HEIGHT 8
 #define INPUT_WIDTH 28
 // clang-format off
-uint8_t input_data[INPUT_HEIGHT*INPUT_WIDTH] = {
+int8_t input_data[INPUT_HEIGHT*INPUT_WIDTH] = {
   1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28,
   1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28,
   1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28,
@@ -48,18 +50,21 @@ uint8_t input_data[INPUT_HEIGHT*INPUT_WIDTH] = {
 // 0 padding, stride 1
 #define OUTPUT_HEIGHT ((INPUT_HEIGHT - FILTER_HEIGHT) + 1)
 #define OUTPUT_WIDTH ((INPUT_WIDTH - FILTER_WIDTH) + 1)
-uint32_t output_data[OUTPUT_HEIGHT*OUTPUT_WIDTH] = {0};
+int32_t output_data[OUTPUT_HEIGHT*OUTPUT_WIDTH*OUTPUT_CHANNELS] = {0};
 
 int main(int argc, char *argv[]) {
+  conv2d(input_data, INPUT_HEIGHT, INPUT_WIDTH, filter_data, FILTER_HEIGHT,
+         FILTER_WIDTH, FILTER_DEPTH, output_data, OUTPUT_HEIGHT, OUTPUT_WIDTH,
+         OUTPUT_CHANNELS);
 
-    conv2d(input_data, INPUT_HEIGHT, INPUT_WIDTH, filter_data, FILTER_HEIGHT, FILTER_WIDTH, 0, output_data, OUTPUT_HEIGHT, OUTPUT_WIDTH);
-
-    printf("Outpur data:\n");
-    for (int y = 0; y < OUTPUT_HEIGHT; y++) {
-        for (int x = 0; x < OUTPUT_WIDTH; x++) {
-            printf("%" PRIu32 ",", output_data[(y * OUTPUT_WIDTH) + x]);
+  printf("Output data:\n");
+  for (int y = 0; y < OUTPUT_HEIGHT; y++) {
+    for (int x = 0; x < OUTPUT_WIDTH; x++) {
+        for (int c = 0; c < OUTPUT_CHANNELS; c++) {
+            printf("%" PRId32 ",", output_data[offset(OUTPUT_HEIGHT, OUTPUT_WIDTH, OUTPUT_CHANNELS, y, x, c)]);
         }
-        printf("\n");
+    }
+    printf("\n");
     }
 
     return 0;

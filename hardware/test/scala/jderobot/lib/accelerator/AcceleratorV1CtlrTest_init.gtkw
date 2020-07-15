@@ -1,0 +1,86 @@
+[*]
+[*] GTKWave Analyzer v3.3.86 (w)1999-2017 BSI
+[*] Wed May 27 23:00:39 2020
+[*]
+[dumpfile] "/home/dlobato/workspace-roboclub/neuralFPGA/simWorkspace/AcceleratorV1Ctlr/test.vcd"
+[dumpfile_mtime] "Wed May 27 22:53:48 2020"
+[dumpfile_size] 216244
+[savefile] "/home/dlobato/workspace-roboclub/neuralFPGA/hardware/test/scala/jderobot/lib/accelerator/AcceleratorV1CtlrTest_init.gtkw"
+[timestart] 130
+[size] 1920 1176
+[pos] -1 -1
+*-5.068099 539 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] TOP.
+[treeopen] TOP.AcceleratorV1Ctlr.
+[sst_width] 260
+[signals_width] 294
+[sst_expanded] 1
+[sst_vpaned_height] 410
+@28
+TOP.AcceleratorV1Ctlr.clk
+TOP.AcceleratorV1Ctlr.reset
+@2028
+[color] 2
+^1 /home/dlobato/workspace-roboclub/neuralFPGA/hardware/test/scala/jderobot/lib/accelerator/AcceleratorV1_fsm_states
+TOP.AcceleratorV1Ctlr.fsm_stateReg[1:0]
+@28
+TOP.AcceleratorV1Ctlr.io_init
+@22
+TOP.AcceleratorV1Ctlr.io_outChannelCount[8:0]
+@24
+[color] 3
+TOP.AcceleratorV1Ctlr.yMemAddr[7:0]
+@22
+TOP.AcceleratorV1Ctlr.yReadData[127:0]
+TOP.AcceleratorV1Ctlr.io_x_payload[31:0]
+@28
+TOP.AcceleratorV1Ctlr.io_x_valid
+TOP.AcceleratorV1Ctlr.io_x_ready
+TOP.AcceleratorV1Ctlr.io_z_valid
+@200
+-ser32to8
+@28
+TOP.AcceleratorV1Ctlr.ser32to8_1_.io_input_valid
+TOP.AcceleratorV1Ctlr.ser32to8_1_.io_input_ready
+@22
+TOP.AcceleratorV1Ctlr.ser32to8_1_.io_output_payload[7:0]
+@200
+-windowBuffer
+@28
+TOP.AcceleratorV1Ctlr.windowBuffer3x3_1_.io_init
+@24
+TOP.AcceleratorV1Ctlr.windowBuffer3x3_1_.delay[9:0]
+@22
+TOP.AcceleratorV1Ctlr.windowBuffer3x3_1_.io_input_payload[7:0]
+@28
+TOP.AcceleratorV1Ctlr.windowBuffer3x3_1_.io_input_valid
+TOP.AcceleratorV1Ctlr.windowBuffer3x3_1_.io_input_ready
+TOP.AcceleratorV1Ctlr.windowBuffer3x3_1_.io_output_valid
+TOP.AcceleratorV1Ctlr.windowBuffer3x3_1_.io_output_ready
+@22
+TOP.AcceleratorV1Ctlr.windowBuffer3x3_1_.io_output_payload_0[7:0]
+TOP.AcceleratorV1Ctlr.windowBuffer3x3_1_.io_output_payload_1[7:0]
+TOP.AcceleratorV1Ctlr.windowBuffer3x3_1_.io_output_payload_2[7:0]
+TOP.AcceleratorV1Ctlr.windowBuffer3x3_1_.io_output_payload_3[7:0]
+TOP.AcceleratorV1Ctlr.windowBuffer3x3_1_.io_output_payload_4[7:0]
+TOP.AcceleratorV1Ctlr.windowBuffer3x3_1_.io_output_payload_5[7:0]
+TOP.AcceleratorV1Ctlr.windowBuffer3x3_1_.io_output_payload_6[7:0]
+TOP.AcceleratorV1Ctlr.windowBuffer3x3_1_.io_output_payload_7[7:0]
+TOP.AcceleratorV1Ctlr.windowBuffer3x3_1_.io_output_payload_8[7:0]
+@200
+-mac8x9
+@28
+TOP.AcceleratorV1Ctlr.mac8x9_1_.io_cmd_valid
+TOP.AcceleratorV1Ctlr.mac8x9_1_.io_cmd_ready
+@22
+TOP.AcceleratorV1Ctlr.mac8x9_1_.io_cmd_payload_x_0[7:0]
+TOP.AcceleratorV1Ctlr.mac8x9_1_.io_cmd_payload_x_1[7:0]
+TOP.AcceleratorV1Ctlr.mac8x9_1_.io_cmd_payload_x_2[7:0]
+TOP.AcceleratorV1Ctlr.mac8x9_1_.io_cmd_payload_x_3[7:0]
+TOP.AcceleratorV1Ctlr.mac8x9_1_.io_cmd_payload_x_4[7:0]
+TOP.AcceleratorV1Ctlr.mac8x9_1_.io_cmd_payload_x_5[7:0]
+TOP.AcceleratorV1Ctlr.mac8x9_1_.io_cmd_payload_x_6[7:0]
+TOP.AcceleratorV1Ctlr.mac8x9_1_.io_cmd_payload_x_7[7:0]
+TOP.AcceleratorV1Ctlr.mac8x9_1_.io_cmd_payload_x_8[7:0]
+[pattern_trace] 1
+[pattern_trace] 0

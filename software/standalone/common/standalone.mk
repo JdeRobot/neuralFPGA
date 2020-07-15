@@ -1,4 +1,4 @@
-INCLUDES += -I${STANDALONE}/include -I${STANDALONE}/hal
+INCLUDES += -I${STANDALONE_PATH}/include
 
 COMMON_CFLAGS := -ffunction-sections -fdata-sections -fstack-usage -Wall
 CFLAGS += $(CFLAGS_ARGS) $(COMMON_CFLAGS)
@@ -7,7 +7,7 @@ LDFLAGS += -ffreestanding -nostartfiles --specs=nano.specs
 LDFLAGS += -Wl,--gc-sections,-Bstatic,-T,$(LDSCRIPT),-Map,$(OBJDIR)/$(PROJ_NAME).map,--print-memory-usage
 
 
-RTSRCS += ${STANDALONE}/common/start.S \
-			${STANDALONE}/common/init.c \
-			${STANDALONE}/common/syscall.c \
-        	${STANDALONE}/common/supc++.cpp
+RTSRCS += ${STANDALONE_PATH}/common/start.S \
+			${STANDALONE_PATH}/common/init.c \
+			${STANDALONE_PATH}/common/syscall.c \
+        	${STANDALONE_PATH}/common/supc++.cpp

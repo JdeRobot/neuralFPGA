@@ -20,15 +20,15 @@ class WindowBuffer3x3Test extends FunSuite {
 
       dut.io.input.valid #= false
       dut.io.output.ready #= false
-      dut.io.flush.valid #= false
-      dut.io.flush.rowWidth #= 8
-      dut.io.flush.initialDelay #= 16
+      dut.io.init #= false
+      dut.io.rowWidth #= 8
+      dut.io.initialDelay #= 16
 
       dut.clockDomain.waitSampling()
 
-      dut.io.flush.valid #= true
+      dut.io.init #= true
       dut.clockDomain.waitSampling()
-      dut.io.flush.valid #= false
+      dut.io.init #= false
       dut.clockDomain.waitSampling()
 
       assert(dut.rowShifter.writeOffset.toInt == 8)
@@ -52,15 +52,15 @@ class WindowBuffer3x3Test extends FunSuite {
 
       dut.io.input.valid #= false
       dut.io.output.ready #= true
-      dut.io.flush.valid #= false
-      dut.io.flush.rowWidth #= 4
-      dut.io.flush.initialDelay #= 4+4+2 //2 rows + 2 pixels
+      dut.io.init #= false
+      dut.io.rowWidth #= 4
+      dut.io.initialDelay #= 4+4+2 //2 rows + 2 pixels
 
       dut.clockDomain.waitSampling()
 
-      dut.io.flush.valid #= true
+      dut.io.init #= true
       dut.clockDomain.waitSampling()
-      dut.io.flush.valid #= false
+      dut.io.init #= false
       dut.clockDomain.waitSampling()
 
       assert(dut.rowShifter.writeOffset.toInt == 4)
@@ -108,15 +108,15 @@ class WindowBuffer3x3Test extends FunSuite {
 
       dut.io.input.valid #= false
       dut.io.output.ready #= false
-      dut.io.flush.valid #= false
-      dut.io.flush.rowWidth #= 4
-      dut.io.flush.initialDelay #= 4+4+2 //2 rows + 3 pixels
+      dut.io.init #= false
+      dut.io.rowWidth #= 4
+      dut.io.initialDelay #= 4+4+2 //2 rows + 3 pixels
 
       dut.clockDomain.waitSampling()
 
-      dut.io.flush.valid #= true
+      dut.io.init #= true
       dut.clockDomain.waitSampling()
-      dut.io.flush.valid #= false
+      dut.io.init #= false
       dut.clockDomain.waitSampling()
 
       assert(dut.rowShifter.writeOffset.toInt == 4)
@@ -165,15 +165,15 @@ class WindowBuffer3x3Test extends FunSuite {
 
       dut.io.input.valid #= false
       dut.io.output.ready #= true
-      dut.io.flush.valid #= false
-      dut.io.flush.rowWidth #= 8
-      dut.io.flush.initialDelay #= 16+3
+      dut.io.init #= false
+      dut.io.rowWidth #= 8
+      dut.io.initialDelay #= 16+3
 
       dut.clockDomain.waitSampling()
 
-      dut.io.flush.valid #= true
+      dut.io.init #= true
       dut.clockDomain.waitSampling()
-      dut.io.flush.valid #= false
+      dut.io.init #= false
       dut.clockDomain.waitSampling()
 
       assert(dut.rowShifter.writeOffset.toInt == 8)
@@ -194,9 +194,9 @@ class WindowBuffer3x3Test extends FunSuite {
       assert(dut.rowShifter.readPtr.value.toInt == 24)
       assert(dut.rowShifter.writePtr.toInt == 0)
 
-      dut.io.flush.valid #= true
+      dut.io.init #= true
       dut.clockDomain.waitSampling()
-      dut.io.flush.valid #= false
+      dut.io.init #= false
       dut.clockDomain.waitSampling()
 
       assert(dut.rowShifter.writeOffset.toInt == 8)
