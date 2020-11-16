@@ -42,9 +42,9 @@ struct ProfileEvent {
   // in EventType.
   EventType event_type;
   // Extra data describing the details of the event.
-  uint32_t event_metadata;
+  int64_t event_metadata;
   // The index of subgraph where an event came from.
-  uint32_t event_subgraph_index;
+  int64_t event_subgraph_index;
 };
 
 template <size_t bufferSize>
@@ -52,7 +52,7 @@ class BufferedProfiler : public tflite::Profiler {
  public:
   BufferedProfiler(ErrorReporter* error_reporter, bool enabled = false): enabled_(enabled), current_index_(0) {}
 
-  uint32_t BeginEvent(const char* tag, EventType event_type, uint32_t event_metadata, uint32_t event_subgraph_index) override {
+  uint32_t BeginEvent(const char* tag, EventType event_type, int64_t event_metadata, int64_t event_subgraph_index) override {
     if (!enabled_) {
       return kInvalidEventHandle;
     }

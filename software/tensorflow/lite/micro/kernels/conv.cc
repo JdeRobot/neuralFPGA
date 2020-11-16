@@ -24,6 +24,9 @@ limitations under the License.
 #include "tensorflow/lite/kernels/kernel_util.h"
 #include "tensorflow/lite/kernels/padding.h"
 
+#include "soc.h"
+#include "accelerator_v1.h"
+
 namespace tflite {
 namespace ops {
 namespace micro {
@@ -55,6 +58,9 @@ struct OpData {
   // uint8_t these would be 0 and 255.
   int32_t output_activation_min;
   int32_t output_activation_max;
+
+  size_t buffer_size;
+  int buffer_idx;
 };
 
 inline PaddingType RuntimePaddingType(TfLitePadding padding) {
@@ -67,6 +73,11 @@ inline PaddingType RuntimePaddingType(TfLitePadding padding) {
     default:
       return PaddingType::kNone;
   }
+}
+
+bool useAccelerator(const TfLiteType data_type, const TfLiteConvParams* params) {
+  return (data_type == kTfLiteInt8 && params->stride_height == 1 && params->stride_width == 1 &&
+      params->dilation_height_factor == 1 && params->dilation_width_factor == 1);
 }
 
 TfLiteStatus CalculateOpData(TfLiteContext* context, TfLiteNode* node,
@@ -103,6 +114,17 @@ TfLiteStatus CalculateOpData(TfLiteContext* context, TfLiteNode* node,
         data->per_channel_output_multiplier,
         reinterpret_cast<int*>(data->per_channel_output_shift),
         output_channels));
+
+    
+    data->buffer_idx = -1;
+    data->buffer_size = 0;
+    if (useAccelerator(data_type, params)) {
+      //buffer size is H*W*D*sizeof(int32_t) of output
+      data->buffer_size = output->dims->data[1] * output->dims->data[2] * output->dims->data[3] * sizeof(int32_t);
+      context->ReportError(context, "data->buffer_size=%u\n", data->buffer_size);
+      TF_LITE_ENSURE_STATUS(
+          context->RequestScratchBufferInArena(context, data->buffer_size, &(data->buffer_idx)));
+    }
   }
   return kTfLiteOk;
 }
@@ -193,93 +215,12 @@ void EvalQuantized(TfLiteContext* context, TfLiteNode* node,
   op_params.output_shift = -data.output_shift;
   op_params.quantized_activation_min = data.output_activation_min;
   op_params.quantized_activation_max = data.output_activation_max;
-
-  const RuntimeShape& input_shape = GetTensorShape(input);
-  const RuntimeShape& filter_shape = GetTensorShape(filter);
-  const RuntimeShape& bias_shape = GetTensorShape(bias);
-  const RuntimeShape& output_shape = GetTensorShape(output);
-  const uint8* input_data = GetTensorData<uint8_t>(input);
-  const uint8* filter_data = GetTensorData<uint8_t>(filter);
-  const int32* bias_data = GetTensorData<int32_t>(bias);
-  uint8* output_data = GetTensorData<uint8_t>(output);
-
-  if (op_params.stride_height == 1 && op_params.stride_width == 1 &&
-      op_params.dilation_height_factor == 1 &&
-      op_params.dilation_width_factor == 1) {
-    const int pad_width = op_params.padding_values.width;
-    const int pad_height = op_params.padding_values.height;
-    const int32 input_offset = op_params.input_offset;
-    const int32 filter_offset = op_params.weights_offset;
-    const int32 output_offset = op_params.output_offset;
-    const int32 output_multiplier = op_params.output_multiplier;
-    const int output_shift = op_params.output_shift;
-    const int32 output_activation_min = op_params.quantized_activation_min;
-    const int32 output_activation_max = op_params.quantized_activation_max;
-    TFLITE_DCHECK_LE(output_activation_min, output_activation_max);
-
-    TFLITE_DCHECK_EQ(input_shape.DimensionsCount(), 4);
-    TFLITE_DCHECK_EQ(filter_shape.DimensionsCount(), 4);
-    TFLITE_DCHECK_EQ(output_shape.DimensionsCount(), 4);
-    const int batches = MatchingDim(input_shape, 0, output_shape, 0);
-    const int input_depth = MatchingDim(input_shape, 3, filter_shape, 3);
-    const int output_depth = MatchingDim(filter_shape, 0, output_shape, 3);
-    if (bias_data) {
-      TFLITE_DCHECK_EQ(bias_shape.FlatSize(), output_depth);
-    }
-    const int input_height = input_shape.Dims(1);
-    const int input_width = input_shape.Dims(2);
-    const int filter_height = filter_shape.Dims(1);
-    const int filter_width = filter_shape.Dims(2);
-    const int output_height = output_shape.Dims(1);
-    const int output_width = output_shape.Dims(2);
-    for (int batch = 0; batch < batches; ++batch) {
-      for (int out_y = 0; out_y < output_height; ++out_y) {
-        for (int out_x = 0; out_x < output_width; ++out_x) {
-          for (int out_channel = 0; out_channel < output_depth; ++out_channel) {
-            const int in_x_origin = (out_x * stride_width) - pad_width;
-            const int in_y_origin = (out_y * stride_height) - pad_height;
-            int32 acc = 0;
-            for (int filter_y = 0; filter_y < filter_height; ++filter_y) {
-              for (int filter_x = 0; filter_x < filter_width; ++filter_x) {
-                for (int in_channel = 0; in_channel < input_depth; ++in_channel) {
-                  const int in_x = in_x_origin + dilation_width_factor * filter_x;
-                  const int in_y =
-                      in_y_origin + dilation_height_factor * filter_y;
-                  // If the location is outside the bounds of the input image,
-                  // use zero as a default value.
-                  if ((in_x >= 0) && (in_x < input_width) && (in_y >= 0) &&
-                      (in_y < input_height)) {
-                    int32 input_val = input_data[Offset(input_shape, batch, in_y,
-                                                        in_x, in_channel)];
-                    int32 filter_val =
-                        filter_data[Offset(filter_shape, out_channel, filter_y,
-                                          filter_x, in_channel)];
-                    acc +=
-                        (filter_val + filter_offset) * (input_val + input_offset);
-                  }
-                }
-              }
-            }
-            if (bias_data) {
-              acc += bias_data[out_channel];
-            }
-            acc = MultiplyByQuantizedMultiplier(acc, output_multiplier,
-                                                output_shift);
-            acc += output_offset;
-            acc = std::max(acc, output_activation_min);
-            acc = std::min(acc, output_activation_max);
-            output_data[Offset(output_shape, batch, out_y, out_x, out_channel)] =
-                static_cast<uint8>(acc);
-          }
-        }
-      }
-    }
-  }else {
-    reference_ops::Conv(op_params, input_shape, input_data, filter_shape,
-                        filter_data, bias_shape, bias_data, output_shape,
-                        output_data, GetTensorShape(im2col),
-                        GetTensorData<uint8_t>(im2col), nullptr);
-  }
+  reference_ops::Conv(op_params, GetTensorShape(input),
+                      GetTensorData<uint8_t>(input), GetTensorShape(filter),
+                      GetTensorData<uint8_t>(filter), GetTensorShape(bias),
+                      GetTensorData<int32_t>(bias), GetTensorShape(output),
+                      GetTensorData<uint8_t>(output), GetTensorShape(im2col),
+                      GetTensorData<uint8_t>(im2col), nullptr);
 }
 
 void EvalQuantizedPerChannel(TfLiteContext* context, TfLiteNode* node,
@@ -300,7 +241,6 @@ void EvalQuantizedPerChannel(TfLiteContext* context, TfLiteNode* node,
   op_params.padding_values.width = data.padding.width;
   op_params.quantized_activation_min = data.output_activation_min;
   op_params.quantized_activation_max = data.output_activation_max;
-
   reference_integer_ops::ConvPerChannel(
       op_params, data.per_channel_output_multiplier,
       data.per_channel_output_shift, GetTensorShape(input),
@@ -308,6 +248,123 @@ void EvalQuantizedPerChannel(TfLiteContext* context, TfLiteNode* node,
       GetTensorData<int8>(filter), GetTensorShape(bias),
       GetTensorData<int32>(bias), GetTensorShape(output),
       GetTensorData<int8>(output));
+}
+
+void EvalQuantizedPerChannelHw(TfLiteContext* context, TfLiteNode* node,
+                             TfLiteConvParams* params, const OpData& data,
+                             const TfLiteTensor* input,
+                             const TfLiteTensor* filter,
+                             const TfLiteTensor* bias, TfLiteTensor* output,
+                             TfLiteTensor* im2col) {
+  TFLITE_DCHECK(context->GetScratchBuffer != nullptr);
+
+  // TODO(b/154032858): Investigate removing extra copies.
+  ConvParams op_params;
+  op_params.input_offset = -input->params.zero_point;
+  op_params.output_offset = output->params.zero_point;
+  op_params.stride_height = params->stride_height;
+  op_params.stride_width = params->stride_width;
+  op_params.dilation_height_factor = params->dilation_height_factor;
+  op_params.dilation_width_factor = params->dilation_width_factor;
+  op_params.padding_values.height = data.padding.height;
+  op_params.padding_values.width = data.padding.width;
+  op_params.quantized_activation_min = data.output_activation_min;
+  op_params.quantized_activation_max = data.output_activation_max;
+
+  const int32* output_multiplier = data.per_channel_output_multiplier;
+  const int32* output_shift = data.per_channel_output_shift;
+  const RuntimeShape& input_shape = GetTensorShape(input);
+  const RuntimeShape& filter_shape = GetTensorShape(filter);
+  const RuntimeShape& bias_shape = GetTensorShape(bias);
+  const RuntimeShape& output_shape = GetTensorShape(output);
+  const int8* input_data = GetTensorData<int8_t>(input);
+  const int8* filter_data = GetTensorData<int8_t>(filter);
+  const int32* bias_data = GetTensorData<int32_t>(bias);
+  int8* output_data = GetTensorData<int8_t>(output);
+  int32_t* output_data_hw = static_cast<int32*>(context->GetScratchBuffer(context, data.buffer_idx));
+
+  // Get parameters.
+  const int32 input_offset = op_params.input_offset;  // r = s(q - Z)
+  const int pad_width = op_params.padding_values.width;
+  const int pad_height = op_params.padding_values.height;
+  const int32 output_offset = op_params.output_offset;
+
+  // Set min and max value of the output.
+  const int32 output_activation_min = op_params.quantized_activation_min;
+  const int32 output_activation_max = op_params.quantized_activation_max;
+
+  // Consistency check.
+  TFLITE_DCHECK_LE(output_activation_min, output_activation_max);
+  TFLITE_DCHECK_EQ(input_shape.DimensionsCount(), 4);
+  TFLITE_DCHECK_EQ(filter_shape.DimensionsCount(), 4);
+  TFLITE_DCHECK_EQ(output_shape.DimensionsCount(), 4);
+  const int batches = MatchingDim(input_shape, 0, output_shape, 0);
+  const int input_depth = MatchingDim(input_shape, 3, filter_shape, 3);
+  const int output_depth = MatchingDim(filter_shape, 0, output_shape, 3);
+  if (bias_data) {
+    TFLITE_DCHECK_EQ(bias_shape.FlatSize(), output_depth);
+  }
+
+  // Check dimensions of the tensors.
+  const int input_height = input_shape.Dims(1);
+  const int input_width = input_shape.Dims(2);
+  const int filter_height = filter_shape.Dims(1);
+  const int filter_width = filter_shape.Dims(2);
+  const int output_height = output_shape.Dims(1);
+  const int output_width = output_shape.Dims(2);
+
+  struct accelerator_v1_instance_t accelerator;
+  struct accelerator_v1_conv2d_3x3_data_t conv2d_3x3_data = {input_width, output_depth};
+  
+  for (int batch = 0; batch < batches; ++batch) {
+    // init hw
+    TFLITE_DCHECK(accelerator_v1_init(&accelerator, ACCELERATOR_V1_BASE_ADDR, ACCELERATOR_V1_CONV2D_3x3, (void*)&conv2d_3x3_data) == 0);
+    // reset output_data_hw
+    memset(output_data_hw, 0, data.buffer_size);
+
+    // send input data one channel at a time
+    for (int in_channel = 0; in_channel < input_depth; ++in_channel) {
+      // send filters: in_channel of each out_channel
+      for (int out_channel = 0; out_channel < output_depth; ++out_channel) {
+        int8_t filter_data_padded[16] = {0};
+        int filter_data_padded_idx = 0;
+        for (int filter_y = 0; filter_y < filter_height; ++filter_y) {
+            for (int filter_x = 0; filter_x < filter_width; ++filter_x) {
+              filter_data_padded[filter_data_padded_idx++] = filter_data[Offset(filter_shape, out_channel, filter_y, filter_x, in_channel)];
+            }
+        }
+        TFLITE_DCHECK(accelerator_v1_set_filter(&accelerator, out_channel, filter_data_padded, 16) == 16);
+      }
+      
+      //TODO: we are assuming input will go in one call, otherwise we need to get results and send more input
+      TFLITE_DCHECK(accelerator_v1_set_input(&accelerator, input_data, input_height * input_width) == input_height * input_width);
+
+      //wait until data is available
+      while (1) {
+        if (accelerator_v1_get_z_fifo_ocupancy(&accelerator) != 0) break;
+      }
+
+      TFLITE_DCHECK(accelerator_v1_accumulate_output(&accelerator, output_data_hw, data.buffer_size) == data.buffer_size);
+    }
+
+    // adjust resolution on output
+    for (int out_y = 0; out_y < output_height; ++out_y) {
+      for (int out_x = 0; out_x < output_width; ++out_x) {
+        for (int out_channel = 0; out_channel < output_depth; ++out_channel) {
+          uint32_t acc = output_data_hw[Offset(output_shape, 0, out_y, out_x, out_channel)];
+          //if (bias_data) {
+          //   acc += bias_data[out_channel];
+          //}
+          // acc = MultiplyByQuantizedMultiplier(
+          //     acc, output_multiplier[out_channel], output_shift[out_channel]);
+          // acc += output_offset;
+          // acc = std::max(acc, output_activation_min);
+          // acc = std::min(acc, output_activation_max);
+          output_data[Offset(output_shape, batch, out_y, out_x, out_channel)] = static_cast<int8_t>(acc);
+        }
+      }
+    }
+  }
 }
 
 void EvalFloat(TfLiteContext* context, TfLiteNode* node,
@@ -355,8 +412,12 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
                 nullptr, output);
       break;
     case kTfLiteInt8:
-      EvalQuantizedPerChannel(context, node, params, data, input, filter, bias,
-                              output, nullptr);
+      if (useAccelerator(input->type, params) && data.buffer_idx != -1)
+        EvalQuantizedPerChannelHw(context, node, params, data, input, filter, bias,
+                                  output, nullptr);
+      else
+        EvalQuantizedPerChannel(context, node, params, data, input, filter, bias,
+                                output, nullptr);
       break;
     case kTfLiteUInt8:
       EvalQuantized(context, node, params, data, input, filter, bias, nullptr,

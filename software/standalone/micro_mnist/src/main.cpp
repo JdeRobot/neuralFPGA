@@ -17,28 +17,6 @@ extern unsigned model_data_size;
 const int tensor_arena_size = 20 * 1024;
 uint8_t tensor_arena[tensor_arena_size];
 
-namespace tflite
-{
-
-namespace ops
-{
-namespace micro
-{
-
-TfLiteRegistration* Register_DEPTHWISE_CONV_2D();
-TfLiteRegistration* Register_FULLY_CONNECTED();
-TfLiteRegistration* Register_MAX_POOL_2D();
-TfLiteRegistration* Register_CONV_2D();
-TfLiteRegistration* Register_SOFTMAX();
-TfLiteRegistration* Register_QUANTIZE();
-TfLiteRegistration* Register_DEQUANTIZE();
-TfLiteRegistration* Register_RESHAPE();
-
-
-} // namespace micro
-} // namespace ops
-} // namespace tflite
-
 int main()
 {
   // Set up logging.
@@ -60,17 +38,15 @@ int main()
   }
 
   // This pulls in all the operation implementations we need.
-  tflite::MicroMutableOpResolver resolver;
-  resolver.AddBuiltin(tflite::BuiltinOperator_DEPTHWISE_CONV_2D, tflite::ops::micro::Register_DEPTHWISE_CONV_2D());
-  resolver.AddBuiltin(tflite::BuiltinOperator_FULLY_CONNECTED, tflite::ops::micro::Register_FULLY_CONNECTED(),
-                      /* min_version */ 1,
-                      /* max_version */ 4);
-  resolver.AddBuiltin(tflite::BuiltinOperator_MAX_POOL_2D, tflite::ops::micro::Register_MAX_POOL_2D(), 1, 2);
-  resolver.AddBuiltin(tflite::BuiltinOperator_CONV_2D, tflite::ops::micro::Register_CONV_2D(), 1, 3);
-  resolver.AddBuiltin(tflite::BuiltinOperator_SOFTMAX, tflite::ops::micro::Register_SOFTMAX(), 1, 2);
-  resolver.AddBuiltin(tflite::BuiltinOperator_QUANTIZE, tflite::ops::micro::Register_QUANTIZE());
-  resolver.AddBuiltin(tflite::BuiltinOperator_DEQUANTIZE, tflite::ops::micro::Register_DEQUANTIZE(), 1, 2);
-  resolver.AddBuiltin(tflite::BuiltinOperator_RESHAPE, tflite::ops::micro::Register_RESHAPE());
+  tflite::MicroMutableOpResolver<8> resolver;
+  resolver.AddDepthwiseConv2D();
+  resolver.AddFullyConnected();
+  resolver.AddMaxPool2D();
+  resolver.AddConv2D();
+  resolver.AddSoftmax();
+  resolver.AddQuantize();
+  resolver.AddDequantize();
+  resolver.AddReshape();
 
   // Build an interpreter to run the model with.
   tflite::MicroInterpreter interpreter(model, resolver, tensor_arena, tensor_arena_size, error_reporter, profiler);

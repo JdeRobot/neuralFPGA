@@ -1,13 +1,18 @@
 PROJ_NAME := micro_mnist
 
 DEBUG := yes
-STANDALONE := $(realpath ..)
-TENSORFLOW_PATH := $(realpath ../../libs/tensorflow)
+NEURALFPGA_ROOT_PATH := $(realpath ../../..)
+BSP_PATH := ${NEURALFPGA_ROOT_PATH}/software/bsp
+DRIVER_PATH := ${NEURALFPGA_ROOT_PATH}/software/driver
+STANDALONE_PATH := ${NEURALFPGA_ROOT_PATH}/software/standalone
+TENSORFLOW_PATH := ${NEURALFPGA_ROOT_PATH}/software/libs/tensorflow
+TENSORFLOW_EXTENSION_PATH := ${NEURALFPGA_ROOT_PATH}/software
 FLATBUFFERS_PATH := $(TENSORFLOW_PATH)/tensorflow/lite/tools/make/downloads/flatbuffers
 GEMMLOWP_PATH := $(TENSORFLOW_PATH)/tensorflow/lite/tools/make/downloads/gemmlowp
 ABSL_PATH := $(TENSORFLOW_PATH)/tensorflow/lite/tools/make/downloads/absl
+RUY_PATH := $(TENSORFLOW_PATH)/tensorflow/lite/tools/make/downloads/ruy
 
-INCLUDES += -I$(TENSORFLOW_PATH) -I$(GEMMLOWP_PATH) -I$(FLATBUFFERS_PATH)/include -I$(ABSL_PATH)
+INCLUDES += -I$(TENSORFLOW_PATH) -I$(GEMMLOWP_PATH) -I$(FLATBUFFERS_PATH)/include -I$(ABSL_PATH) -I$(RUY_PATH) -I$(TENSORFLOW_EXTENSION_PATH)
 
 DEFS := -DNDEBUG \
 		-DTF_LITE_STATIC_MEMORY \
@@ -36,8 +41,9 @@ SRCS := $(filter-out %_test.cc, $(wildcard $(TENSORFLOW_PATH)/tensorflow/lite/mi
 		src/main.cpp
 
 
-include ${STANDALONE}/common/bsp.mk
-include ${STANDALONE}/common/riscv64-unknown-elf.mk
-include ${STANDALONE}/common/standalone.mk
-include ${STANDALONE}/common/build.mk
-include ${STANDALONE}/common/test.mk
+include ${BSP_PATH}/common/bsp.mk
+include ${DRIVER_PATH}/driver.mk
+include ${STANDALONE_PATH}/common/riscv64-unknown-elf.mk
+include ${STANDALONE_PATH}/common/standalone.mk
+include ${STANDALONE_PATH}/common/build.mk
+include ${STANDALONE_PATH}/common/test.mk

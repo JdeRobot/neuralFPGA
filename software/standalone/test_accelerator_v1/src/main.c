@@ -19,7 +19,6 @@ int8_t filter_data[FILTER_DEPTH * FILTER_HEIGHT * FILTER_WIDTH] = {
     1, 1, 1, 1, 1, 1, 1, 1, 1,
     -1, -1, -1, -1, -1, -1, -1, -1, -1,
 };
-int8_t filter_data_padded[16] = {0};
 
 #define INPUT_HEIGHT 28
 #define INPUT_WIDTH 28
@@ -71,16 +70,34 @@ int main() {
   printf("conv2d_sw took: %lu\n", conv2d_sw_elapsed);
 
   struct accelerator_v1_instance_t accelerator;
+  struct accelerator_v1_conv2d_3x3_data_t conv2d_3x3_data = {INPUT_WIDTH, OUTPUT_CHANNELS};
 
-  if (accelerator_v1_init(&accelerator, ACCELERATOR_V1_BASE_ADDR, ACCELERATOR_V1_CONV2D_3x3, INPUT_WIDTH, OUTPUT_CHANNELS) != 0) {
+  if (accelerator_v1_init(&accelerator, ACCELERATOR_V1_BASE_ADDR, ACCELERATOR_V1_CONV2D_3x3, (void*)&conv2d_3x3_data) != 0) {
     printf("accelerator_v1_init failed");
     return -1;
   }
 
+  //verify hw queues are empty
+  assert(accelerator_v1_get_x_fifo_availability(&accelerator) == 512);
+  assert(accelerator_v1_get_z_fifo_ocupancy(&accelerator) == 0);
+
+  //verify hw config match initialized values
+  volatile uint32_t *config0_reg =
+      (volatile uint32_t *)(accelerator.base_address + ACCELERATOR_V1_CONFIG0_REG_OFFSET);
+  volatile uint32_t *config1_reg =
+      (volatile uint32_t *)(accelerator.base_address + ACCELERATOR_V1_CONFIG1_REG_OFFSET);
+
+  assert(((*config0_reg & ACCELERATOR_V1_WINDOW_BUFFER_ROW_WIDTH_MASK) >> ACCELERATOR_V1_WINDOW_BUFFER_ROW_WIDTH_SHIFT) == INPUT_WIDTH);
+  assert(((*config0_reg & ACCELERATOR_V1_WINDOW_BUFFER_INITIAL_DELAY_MASK) >> ACCELERATOR_V1_WINDOW_BUFFER_INITIAL_DELAY_SHIFT) == (INPUT_WIDTH * 2 + 2));
+  assert(((*config1_reg & ACCELERATOR_V1_OUTPUT_CHANNEL_COUNT_MASK) >> ACCELERATOR_V1_OUTPUT_CHANNEL_COUNT_SHIFT) == OUTPUT_CHANNELS);
+  (void)config0_reg;
+  (void)config1_reg;
+
+
   clock_t conv2d_hw_t0 = clock();
   for (int f = 0; f < FILTER_DEPTH; f++) {
     const int8_t *filter_data_p = filter_data + offset(FILTER_DEPTH, FILTER_HEIGHT * FILTER_WIDTH, 1, f, 0, 0);
-    if (accelerator_v1_set_filter(&accelerator, f, filter_data_p, FILTER_HEIGHT*FILTER_WIDTH) == -1) {
+    if (accelerator_v1_set_filter(&accelerator, f, filter_data_p, FILTER_HEIGHT*FILTER_WIDTH) != FILTER_HEIGHT*FILTER_WIDTH) {
       printf("accelerator_v1_set_filter failed");
       return -1;
     }
