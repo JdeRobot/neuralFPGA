@@ -10,7 +10,7 @@ class AdderTreex9Test extends FunSuite {
     dut
   }
 
-  test("adder tree add ones") {
+  test("adder tree add 9 times 1") {
     compiled.doSim{ dut =>
       dut.clockDomain.forkStimulus(period = 10)
 
@@ -31,6 +31,78 @@ class AdderTreex9Test extends FunSuite {
 
       dut.clockDomain.waitRisingEdgeWhere(dut.io.rsp.valid.toBoolean)
       assert(dut.io.rsp.acc.toLong == 9)
+    }
+  }
+
+  test("adder tree add 9 times -1") {
+    compiled.doSim{ dut =>
+      dut.clockDomain.forkStimulus(period = 10)
+
+      dut.io.cmd.valid #= false
+      dut.io.rsp.ready #= false
+      dut.clockDomain.waitSampling()
+
+      dut.io.cmd.valid #= true
+      dut.io.cmd.x.foreach(_ #= -1)
+      dut.io.cmd.acc0 #= 0
+
+      dut.clockDomain.waitSampling()
+      dut.io.rsp.ready #= true
+
+      dut.io.cmd.x.foreach(_ #= 0)
+
+      dut.io.cmd.valid #= false
+
+      dut.clockDomain.waitRisingEdgeWhere(dut.io.rsp.valid.toBoolean)
+      assert(dut.io.rsp.acc.toLong == -9)
+    }
+  }
+
+  test("adder tree add 9 times 127 (upper limit)") {
+    compiled.doSim{ dut =>
+      dut.clockDomain.forkStimulus(period = 10)
+
+      dut.io.cmd.valid #= false
+      dut.io.rsp.ready #= false
+      dut.clockDomain.waitSampling()
+
+      dut.io.cmd.valid #= true
+      dut.io.cmd.x.foreach(_ #= 127)
+      dut.io.cmd.acc0 #= 0
+
+      dut.clockDomain.waitSampling()
+      dut.io.rsp.ready #= true
+
+      dut.io.cmd.x.foreach(_ #= 0)
+
+      dut.io.cmd.valid #= false
+
+      dut.clockDomain.waitRisingEdgeWhere(dut.io.rsp.valid.toBoolean)
+      assert(dut.io.rsp.acc.toLong == 127 * 9)
+    }
+  }
+
+  test("adder tree add 9 times -128 (lower limit)") {
+    compiled.doSim{ dut =>
+      dut.clockDomain.forkStimulus(period = 10)
+
+      dut.io.cmd.valid #= false
+      dut.io.rsp.ready #= false
+      dut.clockDomain.waitSampling()
+
+      dut.io.cmd.valid #= true
+      dut.io.cmd.x.foreach(_ #= -128)
+      dut.io.cmd.acc0 #= 0
+
+      dut.clockDomain.waitSampling()
+      dut.io.rsp.ready #= true
+
+      dut.io.cmd.x.foreach(_ #= 0)
+
+      dut.io.cmd.valid #= false
+
+      dut.clockDomain.waitRisingEdgeWhere(dut.io.rsp.valid.toBoolean)
+      assert(dut.io.rsp.acc.toLong == -128 * 9)
     }
   }
 

@@ -150,8 +150,8 @@ int _gettimeofday(struct timeval  *ptimeval, void *ptimezone)
     if (ptimeval != NULL) {
         uint64_t cycles = _times(NULL);
 
-	    ptimeval->tv_sec = (time_t)(cycles / SYSTEM_MACHINE_TIMER_HZ);
-        ptimeval->tv_usec = (suseconds_t)(cycles / (SYSTEM_MACHINE_TIMER_HZ/1000000));
+	    ptimeval->tv_sec = (time_t)(cycles / SYSTEM_MACHINE_TIMER_FREQ);
+        ptimeval->tv_usec = (suseconds_t)(cycles / (SYSTEM_MACHINE_TIMER_FREQ/1000000));
     }
 
     (void)ptimezone;

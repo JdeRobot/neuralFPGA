@@ -3,36 +3,34 @@ package jderobot.lib.accelerator
 import spinal.core._
 import spinal.lib._
 
-case class WindowBuffer3x3Generics(elementWidth: Int, maxRowWidth: Int) {
-  def maxDelayValue(): Int  = maxRowWidth*2 + 3
+case class WindowBuffer3x3Generics(elementWidth: Int = 8, maxRowWidth: Int = 256) {
+  def maxDelayValue(): Int  = maxRowWidth*2 + 2
 }
 
-case class WindowBuffer3x3FlushCmd(config: WindowBuffer3x3Generics) extends Bundle{
-  val rowWidth = UInt (log2Up(config.maxRowWidth + 1) bit)
-  val initialDelay = UInt (log2Up((config.maxDelayValue()) + 1) bit)
-}
-
-case class WindowBuffer3x3(config: WindowBuffer3x3Generics) extends Component {
-  require(config.maxRowWidth >= 1)
-  require(isPow2(config.maxRowWidth))
+case class WindowBuffer3x3(generics: WindowBuffer3x3Generics) extends Component {
+  require(generics.maxRowWidth >= 1)
+  require(isPow2(generics.maxRowWidth))
 
   val io = new Bundle {
-    val flush = slave Flow(WindowBuffer3x3FlushCmd(config))
-    val input = slave Stream(Bits(config.elementWidth bits))
-    val output = master Stream(Vec(Bits(config.elementWidth bits), 9))
+    val init = in Bool
+    val rowWidth = in UInt (log2Up(generics.maxRowWidth + 1) bit)
+    val initialDelay = in UInt (log2Up((generics.maxDelayValue()) + 1) bit)
+
+    val input = slave Stream(Bits(generics.elementWidth bits))
+    val output = master Stream(Vec(Bits(generics.elementWidth bits), 9))
   }
 
-  val delayValueNext = UInt(log2Up((config.maxDelayValue()) + 1) bit)
+  val delayValueNext = UInt(log2Up((generics.maxDelayValue()) + 1) bit)
   val delay = RegNext(delayValueNext) init(0)
   val delayWillDecrement = False
   val pendingRsp = RegInit(False)
 
   val rowShifter = new Area {
-    val row0 = new Mem(Bits(config.elementWidth bits), config.maxRowWidth) addAttribute(Verilator.public)
-    val row1 = new Mem(Bits(config.elementWidth bits), config.maxRowWidth) addAttribute(Verilator.public)
-    val readPtr = Counter(config.maxRowWidth)
-    val writePtr = UInt(log2Up(config.maxRowWidth) bit)
-    val writeOffset = Reg(io.flush.rowWidth) init(0)
+    val row0 = new Mem(Bits(generics.elementWidth bits), generics.maxRowWidth) addAttribute(Verilator.public)
+    val row1 = new Mem(Bits(generics.elementWidth bits), generics.maxRowWidth) addAttribute(Verilator.public)
+    val readPtr = Counter(generics.maxRowWidth)
+    val writePtr = UInt(log2Up(generics.maxRowWidth) bit)
+    val writeOffset = Reg(io.rowWidth) init(0)
 
     val row0Front = row0.readAsync(readPtr.value)
     val row1Front = row1.readAsync(readPtr.value)
@@ -45,9 +43,9 @@ case class WindowBuffer3x3(config: WindowBuffer3x3Generics) extends Component {
       readPtr.increment()
     }
 
-    when(io.flush.fire) {
+    when(io.init) {
       readPtr.clear()
-      writeOffset := io.flush.rowWidth
+      writeOffset := io.rowWidth
     }
   }
 
@@ -79,8 +77,8 @@ case class WindowBuffer3x3(config: WindowBuffer3x3Generics) extends Component {
     delayWillDecrement := (delay =/= 0)
   }
 
-  when(io.flush.fire) {
-    delayValueNext := io.flush.initialDelay
+  when(io.init) {
+    delayValueNext := io.initialDelay
   }
 
   when(io.input.fire && (delay === 0)) {
@@ -99,6 +97,6 @@ object WindowBuffer3x3 {
     val outRtlDir = if (!args.isEmpty) args(0) else  "rtl"
     SpinalConfig(
       targetDirectory = outRtlDir
-    ).generateVerilog(WindowBuffer3x3(WindowBuffer3x3Generics(elementWidth = 8, maxRowWidth = 256)))
+    ).generateVerilog(WindowBuffer3x3(WindowBuffer3x3Generics()))
   }
 }

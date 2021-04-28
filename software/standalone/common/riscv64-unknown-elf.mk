@@ -19,6 +19,7 @@ ifeq ($(DEBUG),yes)
 endif
 
 ifeq ($(DEBUG),no)
+	CFLAGS += -DNDEBUG
 ifeq ($(BENCH),no)
 	CFLAGS += -Os
 else

@@ -4,8 +4,8 @@ OBJCOPY=objcopy
 OBJDUMP=objdump
 
 ifeq ($(DEBUG),yes)
-	CFLAGS += -g3 -Og
-	CXXFLAGS += -g3 -Og
+	CFLAGS += -g
+	CXXFLAGS += -g
 else
 	CFLAGS += -O3
 	CXXFLAGS += -O3

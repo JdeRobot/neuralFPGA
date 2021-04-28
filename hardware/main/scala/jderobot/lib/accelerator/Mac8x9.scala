@@ -8,18 +8,18 @@ case class Mac8x9Generics(accumulatorWidth: Int = 32,
                           useHwMultiplier: Boolean = false)
 
 case class Mac8x9Cmd(config: Mac8x9Generics) extends Bundle {
-  val x = Vec(UInt(8 bits), 9)
-  val y = Vec(UInt(8 bits), 9)
-  val acc0 = UInt(config.accumulatorWidth bits)
+  val x = Vec(SInt(8 bits), 9)
+  val y = Vec(SInt(8 bits), 9)
+  val acc0 = SInt(config.accumulatorWidth bits)
 }
 
 case class Mac8x9Rsp(config: Mac8x9Generics) extends Bundle {
-  val acc = UInt(config.accumulatorWidth bits)
+  val acc = SInt(config.accumulatorWidth bits)
 }
 
 case class Mac8x9StageContext(config: Mac8x9Generics, sumBits: Int, sumSize: Int) extends Bundle {
-  val sums = Vec(UInt(sumBits bits), sumSize)
-  val acc0 = UInt(config.accumulatorWidth bits)
+  val sums = Vec(SInt(sumBits bits), sumSize)
+  val acc0 = SInt(config.accumulatorWidth bits)
 }
 
 case class Mac8x9(config: Mac8x9Generics) extends Component {
@@ -35,7 +35,7 @@ case class Mac8x9(config: Mac8x9Generics) extends Component {
     output.translateFrom(input)((to, from) => {
       if (config.useHwMultiplier) {
         for( i <- 0 until 4) {
-          val multiplier = Multiplier8x8x2Unsigned()
+          val multiplier = Multiplier8x8x2Signed()
 
           multiplier.io.a := Vec(from.x(i * 2), from.x(i * 2 + 1))
           multiplier.io.b := Vec(from.y(i * 2), from.y(i * 2 + 1))

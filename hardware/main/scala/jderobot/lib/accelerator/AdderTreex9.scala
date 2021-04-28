@@ -7,17 +7,17 @@ case class AdderTreex9Generics(inputWidth: Int,
                                accumulatorWidth: Int)
 
 case class AdderTreex9Cmd(config: AdderTreex9Generics) extends Bundle {
-  val x = Vec(UInt(config.inputWidth bits), 9)
-  val acc0 = UInt(config.accumulatorWidth bits)
+  val x = Vec(SInt(config.inputWidth bits), 9)
+  val acc0 = SInt(config.accumulatorWidth bits)
 }
 
 case class AdderTreex9Rsp(config: AdderTreex9Generics) extends Bundle {
-  val acc = UInt(config.accumulatorWidth bits)
+  val acc = SInt(config.accumulatorWidth bits)
 }
 
 case class AdderTreex9StageContext(config: AdderTreex9Generics, sumBits: Int, sumSize: Int) extends Bundle {
-  val sums = Vec(UInt(sumBits bits), sumSize)
-  val acc0 = UInt(config.accumulatorWidth bits)
+  val sums = Vec(SInt(sumBits bits), sumSize)
+  val acc0 = SInt(config.accumulatorWidth bits)
 }
 
 case class AdderTreex9(config: AdderTreex9Generics) extends Component {
@@ -26,7 +26,7 @@ case class AdderTreex9(config: AdderTreex9Generics) extends Component {
     val rsp = master Stream(AdderTreex9Rsp(config))
   }
 
-  def add(seq: IndexedSeq[UInt]): UInt = seq match {
+  def add(seq: IndexedSeq[SInt]): SInt = seq match {
     case IndexedSeq(a,b) => a.resize(a.getWidth + 1) + b
     case IndexedSeq(a) => a.resized
   }
