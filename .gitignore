@@ -42,5 +42,13 @@ tmp
 rtl
 attic
 
-totesim/obj_dir
-
+*.o
+*.su
+*.d
+*.map
+*.elf
+*.bin
+*.asm
+csr.csv
+sim.gtkw
+venv

@@ -1,9 +1,3 @@
 [submodule "src/main/resources/rtl/Booth_Multipliers"]
 	path = hardware/main/resources/rtl/Booth_Multipliers
 	url = https://github.com/dlobato/Booth_Multipliers
-[submodule "libs/ELFIO"]
-	path = totesim/libs/ELFIO
-	url = https://github.com/serge1/ELFIO.git
-[submodule "libs/tensorflow"]
-	path = software/libs/tensorflow
-	url = https://github.com/dlobato/tensorflow.git
